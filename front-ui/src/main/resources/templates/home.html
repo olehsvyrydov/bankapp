@@ -8,19 +8,20 @@
     <title th:text="#{app.name} + ' - ' + #{home.title}">Bank - Home</title>
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
-<body th:attr="data-transfer-same-account=${#messages.msg('transfer.sameAccount')}, data-amount-positive=${#messages.msg('validation.amount.positive')}">
+<body th:attr="data-transfer-same-account=${#messages.msg('transfer.sameAccount')},
+  data-amount-positive=${#messages.msg('validation.amount.positive')},
+  data-modal-cancel=${#messages.msg('common.cancel')},
+  data-modal-confirm=${#messages.msg('common.confirm')},
+  data-modal-delete=${#messages.msg('account.deleteConfirm')}">
 <div class="container">
     <div class="header">
         <h1 th:text="#{app.welcome}">Welcome to Bank</h1>
         <div class="user-info">
-            <div th:replace="fragments/language-switch :: languageSelector"></div>
+            <div th:replace="~{fragments/language-switch :: languageSelector}"></div>
             <span th:text="${username}">Username</span>
             <a th:href="@{/logout}" class="btn btn-secondary" th:text="#{nav.logout}">Logout</a>
         </div>
     </div>
-
-    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
-    <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
 
     <div class="notifications" th:if="${notifications != null and !notifications.isEmpty()}">
         <h3>Recent Notifications</h3>
@@ -102,7 +103,7 @@
                         <small><span th:text="#{account.id}">Account ID</span>: <strong th:text="${ba.id}"></strong></small>
                     </div>
                     <form th:action="@{/bank-account/delete}" method="post"
-                          th:attr="onsubmit=|return confirm('#{account.deleteConfirm}');|">
+                          th:attr="data-confirm=#{account.deleteConfirm}">
                         <input type="hidden" name="bankAccountId" th:value="${ba.id}">
                         <button type="submit" class="btn btn-danger btn-sm" th:text="#{common.delete}">Delete</button>
                     </form>
@@ -284,6 +285,23 @@
         </div>
     </div>
 </div>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+    window.app = window.app || {};
+    window.app.flashErrors = [];
+    window.app.flashSuccess = [];
+    /*[# th:if="${error != null}"]*/
+    window.app.flashErrors.push(/*[[${error}]]*/'');
+    /*[/]*/
+    /*[# th:if="${errorDetails != null}"]*/
+    window.app.flashErrors.push(/*[[${errorDetails}]]*/'');
+    /*[/]*/
+    /*[# th:if="${success != null}"]*/
+    window.app.flashSuccess.push(/*[[${success}]]*/'');
+    /*[/]*/
+/*]]>*/
+</script>
 
 <script th:src="@{/js/app.js}"></script>
 </body>

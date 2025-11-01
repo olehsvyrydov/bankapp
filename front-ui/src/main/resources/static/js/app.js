@@ -30,8 +30,48 @@ function showNotification(message, type = 'info', duration = 4000) {
 }
 
 
+
+function showConfirmModal(message) {
+    const existing = document.getElementById('confirm-modal');
+    if (existing) {
+        existing.remove();
+    }
+    const modal = document.createElement('div');
+    modal.id = 'confirm-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal">
+            <p class="modal-message">${message || 'Are you sure?'}</p>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="modal-cancel">${document.body.dataset.modalCancel || 'Cancel'}</button>
+                <button type="button" class="btn btn-primary" id="modal-confirm">${document.body.dataset.modalConfirm || 'Confirm'}</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    return new Promise(resolve => {
+        modal.querySelector('#modal-cancel').addEventListener('click', () => {
+            modal.remove();
+            resolve(false);
+        });
+        modal.querySelector('#modal-confirm').addEventListener('click', () => {
+            modal.remove();
+            resolve(true);
+        });
+    });
+}
+
+
 // Validate registration form
 document.addEventListener('DOMContentLoaded', function() {
+    if (window.app && Array.isArray(window.app.flashErrors)) {
+        window.app.flashErrors.forEach(msg => showNotification(msg, 'error', 6000));
+    }
+    if (window.app && Array.isArray(window.app.flashSuccess)) {
+        window.app.flashSuccess.forEach(msg => showNotification(msg, 'success', 4000));
+    }
+
     const registerForm = document.getElementById('registerForm');
 
     if (registerForm) {
@@ -47,6 +87,24 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+
+    document.querySelectorAll('form[data-confirm]').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            if (form.dataset.confirmPending === 'true') {
+                form.dataset.confirmPending = '';
+                return;
+            }
+            e.preventDefault();
+            const message = form.getAttribute('data-confirm');
+            showConfirmModal(message).then(confirmed => {
+                if (confirmed) {
+                    form.dataset.confirmPending = 'true';
+                    form.submit();
+                }
+            });
+        });
+    });
 
     // Prevent selecting same account for transfers
     const fromAccount = document.getElementById('fromAccount');
@@ -153,5 +211,5 @@ function validateAmount(input) {
 
 // Confirmation dialogs
 function confirmDelete(message) {
-    return confirm(message || 'Are you sure you want to delete this item?');
+    return showConfirmModal(message || document.body.dataset.modalDelete || 'Are you sure you want to delete this item?');
 }

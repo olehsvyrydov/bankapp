@@ -145,7 +145,7 @@ class BankAccountControllerTest {
 
             // Then
             assertThat(result).isEqualTo("redirect:/home");
-            verify(redirectAttributes).addFlashAttribute("error", "Failed to create bank account. Please try again.");
+            verify(redirectAttributes).addFlashAttribute("error", "Database connection failed");
         }
 
         @Test
@@ -161,7 +161,7 @@ class BankAccountControllerTest {
 
             // Then
             assertThat(result).isEqualTo("redirect:/home");
-            verify(redirectAttributes).addFlashAttribute("error", "Failed to create bank account. Please try again.");
+            verify(redirectAttributes).addFlashAttribute("error", "Internal Server Error");
         }
 
         @Test
@@ -297,7 +297,7 @@ class BankAccountControllerTest {
 
             // Then
             assertThat(result).isEqualTo("redirect:/home");
-            verify(redirectAttributes).addFlashAttribute("error", "Failed to delete bank account. Please try again.");
+            verify(redirectAttributes).addFlashAttribute("error", "Database error");
         }
 
         @Test

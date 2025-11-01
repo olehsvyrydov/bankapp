@@ -4,6 +4,7 @@ import com.bank.common.dto.contracts.cash.CashOperationRequest;
 import com.bank.common.util.ErrorMessageUtil;
 import com.bank.frontend.service.CashServiceClient;
 import com.bank.frontend.service.LocalizationService;
+import com.bank.frontend.util.MessageHelper;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -72,12 +73,32 @@ public class CashController {
         } catch (Exception e) {
             log.error("Deposit failed for user {}, accountId {}: {}", username, request.getBankAccountId(),
                 ErrorMessageUtil.sanitizeForLogging(e.getMessage()));
-            String defaultMessage = localizationService.getMessage("cash.depositError");
-            String friendlyMessage = ErrorMessageUtil.extractUserFriendlyMessage(
-                e.getMessage(),
-                defaultMessage
-            );
-            redirectAttributes.addFlashAttribute("error", friendlyMessage);
+
+            // Extract the actual error message from JSON response
+            String backendMessage = MessageHelper.extractReadable(e.getMessage());
+            String localizationKey = MessageHelper.getLocalizationKey(backendMessage);
+
+            String errorMessage = null;
+            if (localizationKey != null) {
+                // Try to use localized message if mapping exists
+                try {
+                    errorMessage = localizationService.getMessage(localizationKey);
+                } catch (Exception ex) {
+                    log.debug("Failed to get localized message for key: {}", localizationKey);
+                }
+            }
+
+            // Fall back to backend message if localization didn't work
+            if (errorMessage == null || errorMessage.isBlank()) {
+                if (backendMessage != null && !backendMessage.isBlank()) {
+                    errorMessage = backendMessage;
+                } else {
+                    // Final fallback to default error message
+                    errorMessage = localizationService.getMessage("cash.depositError");
+                }
+            }
+
+            redirectAttributes.addFlashAttribute("error", errorMessage);
         }
 
         return "redirect:/home";
@@ -124,12 +145,32 @@ public class CashController {
         } catch (Exception e) {
             log.error("Withdrawal failed for user {}, accountId {}: {}", username, request.getBankAccountId(),
                 ErrorMessageUtil.sanitizeForLogging(e.getMessage()));
-            String defaultMessage = localizationService.getMessage("cash.withdrawError");
-            String friendlyMessage = ErrorMessageUtil.extractUserFriendlyMessage(
-                e.getMessage(),
-                defaultMessage
-            );
-            redirectAttributes.addFlashAttribute("error", friendlyMessage);
+
+            // Extract the actual error message from JSON response
+            String backendMessage = MessageHelper.extractReadable(e.getMessage());
+            String localizationKey = MessageHelper.getLocalizationKey(backendMessage);
+
+            String errorMessage = null;
+            if (localizationKey != null) {
+                // Try to use localized message if mapping exists
+                try {
+                    errorMessage = localizationService.getMessage(localizationKey);
+                } catch (Exception ex) {
+                    log.debug("Failed to get localized message for key: {}", localizationKey);
+                }
+            }
+
+            // Fall back to backend message if localization didn't work
+            if (errorMessage == null || errorMessage.isBlank()) {
+                if (backendMessage != null && !backendMessage.isBlank()) {
+                    errorMessage = backendMessage;
+                } else {
+                    // Final fallback to default error message
+                    errorMessage = localizationService.getMessage("cash.withdrawError");
+                }
+            }
+
+            redirectAttributes.addFlashAttribute("error", errorMessage);
         }
 
         return "redirect:/home";

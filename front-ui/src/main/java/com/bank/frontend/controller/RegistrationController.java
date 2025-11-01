@@ -4,6 +4,7 @@ import com.bank.common.dto.contracts.accounts.CreateAccountRequest;
 import com.bank.common.util.ErrorMessageUtil;
 import com.bank.frontend.service.AccountServiceClient;
 import com.bank.frontend.service.LocalizationService;
+import com.bank.frontend.util.MessageHelper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,7 +68,9 @@ public class RegistrationController {
                 e.getMessage(),
                 defaultMessage
             );
-            model.addAttribute("error", friendlyMessage);
+            String rawMessage = ErrorMessageUtil.sanitizeForLogging(e.getMessage());
+            String finalMessage = MessageHelper.pickUserMessage(defaultMessage, friendlyMessage, rawMessage);
+            model.addAttribute("error", finalMessage);
             model.addAttribute("createAccountRequest", request);
             return "register";
         }

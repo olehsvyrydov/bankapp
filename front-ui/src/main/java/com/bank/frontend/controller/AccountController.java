@@ -4,6 +4,7 @@ import com.bank.common.dto.contracts.accounts.UpdateAccountRequest;
 import com.bank.common.util.ErrorMessageUtil;
 import com.bank.frontend.service.AccountServiceClient;
 import com.bank.frontend.service.LocalizationService;
+import com.bank.frontend.util.MessageHelper;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -71,7 +72,9 @@ public class AccountController {
                 e.getMessage(),
                 defaultMessage
             );
-            redirectAttributes.addFlashAttribute("error", friendlyMessage);
+            String rawMessage = ErrorMessageUtil.sanitizeForLogging(e.getMessage());
+            String finalMessage = MessageHelper.pickUserMessage(defaultMessage, friendlyMessage, rawMessage);
+            redirectAttributes.addFlashAttribute("error", finalMessage);
         }
 
         return "redirect:/home";

@@ -141,7 +141,7 @@ class AccountControllerTest {
 
             // Then
             assertThat(result).isEqualTo("redirect:/home");
-            verify(redirectAttributes).addFlashAttribute("error", "Failed to update account. Please try again.");
+            verify(redirectAttributes).addFlashAttribute("error", "Database connection failed");
             verify(redirectAttributes, never()).addFlashAttribute(eq("success"), anyString());
         }
 
@@ -158,7 +158,7 @@ class AccountControllerTest {
 
             // Then
             assertThat(result).isEqualTo("redirect:/home");
-            verify(redirectAttributes).addFlashAttribute("error", "Failed to update account. Please try again.");
+            verify(redirectAttributes).addFlashAttribute("error", "Internal Server Error");
         }
 
         @Test

@@ -168,7 +168,7 @@ class CashControllerTest {
 
             // Then
             assertThat(result).isEqualTo("redirect:/home");
-            verify(redirectAttributes).addFlashAttribute("error", "Deposit failed. Please try again.");
+            verify(redirectAttributes).addFlashAttribute("error", "Database error");
         }
 
         @Test
@@ -184,7 +184,7 @@ class CashControllerTest {
 
             // Then
             assertThat(result).isEqualTo("redirect:/home");
-            verify(redirectAttributes).addFlashAttribute("error", "Deposit failed. Please try again.");
+            verify(redirectAttributes).addFlashAttribute("error", "Internal Server Error");
         }
 
         @Test
@@ -289,7 +289,7 @@ class CashControllerTest {
 
             // Then
             assertThat(result).isEqualTo("redirect:/home");
-            verify(redirectAttributes).addFlashAttribute("error", "Withdrawal failed. Please try again.");
+            verify(redirectAttributes).addFlashAttribute("error", "Database error");
         }
 
         @Test

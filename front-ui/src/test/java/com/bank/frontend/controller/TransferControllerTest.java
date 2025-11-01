@@ -174,7 +174,7 @@ class TransferControllerTest {
 
             // Then
             assertThat(result).isEqualTo("redirect:/home");
-            verify(redirectAttributes).addFlashAttribute("error", "Transfer failed. Please try again.");
+            verify(redirectAttributes).addFlashAttribute("error", "Database error");
         }
 
         @Test
@@ -190,7 +190,7 @@ class TransferControllerTest {
 
             // Then
             assertThat(result).isEqualTo("redirect:/home");
-            verify(redirectAttributes).addFlashAttribute("error", "Transfer failed. Please try again.");
+            verify(redirectAttributes).addFlashAttribute("error", "Internal Server Error");
         }
 
         @Test
@@ -299,7 +299,7 @@ class TransferControllerTest {
 
             // Then
             assertThat(result).isEqualTo("redirect:/home");
-            verify(redirectAttributes).addFlashAttribute("error", "Transfer failed. Please try again.");
+            verify(redirectAttributes).addFlashAttribute("error", "Service unavailable");
         }
 
         @Test

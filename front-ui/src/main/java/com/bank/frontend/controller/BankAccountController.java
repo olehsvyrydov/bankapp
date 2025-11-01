@@ -4,6 +4,7 @@ import com.bank.common.dto.contracts.accounts.CreateBankAccountRequest;
 import com.bank.common.util.ErrorMessageUtil;
 import com.bank.frontend.service.AccountServiceClient;
 import com.bank.frontend.service.LocalizationService;
+import com.bank.frontend.util.MessageHelper;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -66,12 +67,32 @@ public class BankAccountController {
         } catch (Exception e) {
             log.error("Failed to create bank account for user {}: {}", username,
                 ErrorMessageUtil.sanitizeForLogging(e.getMessage()));
-            String defaultMessage = localizationService.getMessage("bankAccount.create.error");
-            String friendlyMessage = ErrorMessageUtil.extractUserFriendlyMessage(
-                e.getMessage(),
-                defaultMessage
-            );
-            redirectAttributes.addFlashAttribute("error", friendlyMessage);
+
+            // Extract the actual error message from JSON response
+            String backendMessage = MessageHelper.extractReadable(e.getMessage());
+            String localizationKey = MessageHelper.getLocalizationKey(backendMessage);
+
+            String errorMessage = null;
+            if (localizationKey != null) {
+                // Try to use localized message if mapping exists
+                try {
+                    errorMessage = localizationService.getMessage(localizationKey);
+                } catch (Exception ex) {
+                    log.debug("Failed to get localized message for key: {}", localizationKey);
+                }
+            }
+
+            // Fall back to backend message if localization didn't work
+            if (errorMessage == null || errorMessage.isBlank()) {
+                if (backendMessage != null && !backendMessage.isBlank()) {
+                    errorMessage = backendMessage;
+                } else {
+                    // Final fallback to default error message
+                    errorMessage = localizationService.getMessage("bankAccount.create.error");
+                }
+            }
+
+            redirectAttributes.addFlashAttribute("error", errorMessage);
         }
 
         return "redirect:/home";
@@ -107,12 +128,32 @@ public class BankAccountController {
         } catch (Exception e) {
             log.error("Failed to delete bank account for user {}, accountId {}: {}", username, bankAccountId,
                 ErrorMessageUtil.sanitizeForLogging(e.getMessage()));
-            String defaultMessage = localizationService.getMessage("bankAccount.delete.error");
-            String friendlyMessage = ErrorMessageUtil.extractUserFriendlyMessage(
-                e.getMessage(),
-                defaultMessage
-            );
-            redirectAttributes.addFlashAttribute("error", friendlyMessage);
+
+            // Extract the actual error message from JSON response
+            String backendMessage = MessageHelper.extractReadable(e.getMessage());
+            String localizationKey = MessageHelper.getLocalizationKey(backendMessage);
+
+            String errorMessage = null;
+            if (localizationKey != null) {
+                // Try to use localized message if mapping exists
+                try {
+                    errorMessage = localizationService.getMessage(localizationKey);
+                } catch (Exception ex) {
+                    log.debug("Failed to get localized message for key: {}", localizationKey);
+                }
+            }
+
+            // Fall back to backend message if localization didn't work
+            if (errorMessage == null || errorMessage.isBlank()) {
+                if (backendMessage != null && !backendMessage.isBlank()) {
+                    errorMessage = backendMessage;
+                } else {
+                    // Final fallback to default error message
+                    errorMessage = localizationService.getMessage("bankAccount.delete.error");
+                }
+            }
+
+            redirectAttributes.addFlashAttribute("error", errorMessage);
         }
 
         return "redirect:/home";
