@@ -1,3 +1,35 @@
+
+function getToastContainer() {
+    const containerId = 'toast-container';
+    let container = document.getElementById(containerId);
+    if (!container) {
+        container = document.createElement('div');
+        container.id = containerId;
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+    return container;
+}
+
+function showNotification(message, type = 'info', duration = 4000) {
+    if (!message) {
+        return;
+    }
+    const container = getToastContainer();
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+
+    requestAnimationFrame(() => toast.classList.add('show'));
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+
 // Validate registration form
 document.addEventListener('DOMContentLoaded', function() {
     const registerForm = document.getElementById('registerForm');
@@ -10,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (age < 18) {
                 e.preventDefault();
-                alert(ageMessage);
+                showNotification(ageMessage, 'error');
                 return false;
             }
         });
@@ -24,14 +56,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const sameAccountMessage = document.body.dataset.transferSameAccount || 'Cannot transfer to the same account';
         fromAccount.addEventListener('change', function() {
             if (fromAccount.value === toAccount.value) {
-                alert(sameAccountMessage);
+                showNotification(sameAccountMessage, 'error');
                 toAccount.value = '';
             }
         });
 
         toAccount.addEventListener('change', function() {
             if (fromAccount.value === toAccount.value) {
-                alert(sameAccountMessage);
+                showNotification(sameAccountMessage, 'error');
                 toAccount.value = '';
             }
         });
@@ -112,7 +144,7 @@ function validateAmount(input) {
     const value = parseFloat(input.value);
     const positiveMessage = document.body.dataset.amountPositive || 'Amount must be positive';
     if (value <= 0) {
-        alert(positiveMessage);
+        showNotification(positiveMessage, 'error');
         input.value = '';
         return false;
     }
