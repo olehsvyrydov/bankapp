@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: exchange-service
+  datasource:
+    url: jdbc:postgresql://postgres:5432/exchangedb
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+  cloud:
+    discovery:
+      enabled: true
+  cache:
+    type: redis
+    redis:
+      host: redis
+      port: 6379
+      time-to-live: 300000 # 5 minutes
+
+server:
+  port: 8084
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always

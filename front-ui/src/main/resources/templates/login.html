@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Bank Login</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<div class="container">
+    <div class="login-box">
+        <h2>Bank Login</h2>
+
+        <div th:if="${error}" class="alert alert-error">
+            <span th:text="${error}"></span>
+        </div>
+
+        <div th:if="${message}" class="alert alert-success">
+            <span th:text="${message}"></span>
+        </div>
+
+        <div th:if="${success}" class="alert alert-success">
+            <span th:text="${success}"></span>
+        </div>
+
+        <form th:action="@{/perform-login}" th:object="${loginRequest}" method="post">
+            <div class="form-group">
+                <label>Username:
+                    <input type="text" th:field="*{username}" class="form-control" required autofocus />
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label>Password:
+                    <input type="password" th:field="*{password}" class="form-control" required />
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Login</button>
+        </form>
+
+        <div class="register-link">
+            <p>Don't have an account? <a th:href="@{/register}">Register here</a></p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

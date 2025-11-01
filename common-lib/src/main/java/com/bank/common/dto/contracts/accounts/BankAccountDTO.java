@@ -1,0 +1,17 @@
+package com.bank.common.dto.contracts.accounts;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class BankAccountDTO {
+    private Long id;
+    private String currency;
+    private Double balance;
+    private String accountUsername;
+}

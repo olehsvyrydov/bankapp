@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Bank Registration</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<div class="container">
+    <div class="register-box">
+        <h2>Create Account</h2>
+
+        <div th:if="${error}" class="alert alert-error">
+            <span th:text="${error}"></span>
+        </div>
+
+        <form th:action="@{/perform-register}" th:object="${registerRequest}" method="post">
+            <div class="form-group">
+                <label>Username:
+                    <input type="text" th:field="*{username}" class="form-control" required autofocus />
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label>First name:
+                    <input type="text" th:field="*{firstName}" class="form-control" required autofocus />
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label>Last name:
+                    <input type="text" th:field="*{lastName}" class="form-control" required autofocus />
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label>Email:
+                    <input type="email" th:field="*{email}" class="form-control" required placeholder="user@example.com" />
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label>Day of birth:
+                    <input type="date" th:field="*{birthDate}" class="form-control" required />
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label>Password:
+                    <input type="password" th:field="*{password}" class="form-control" required minlength="6" />
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label>Confirm Password:
+                    <input type="password" th:field="*{confirmPassword}" class="form-control" required minlength="6" />
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Register</button>
+        </form>
+
+        <div class="login-link">
+            <p>Already have an account? <a th:href="@{/login}">Login here</a></p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

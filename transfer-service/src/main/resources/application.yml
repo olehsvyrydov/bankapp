@@ -1,0 +1,82 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: transfer-service
+  config:
+    import: "optional:configserver:${CONFIG_SERVER_URL:http://config-server:8888}"
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://postgres:5432/bankdb
+    username: ${DB_USERNAME:bank_user}
+    password: ${DB_PASSWORD:bank_password}
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    schemas: transfer
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SECURITY_ISSUER:http://auth-server:9100}
+      client:
+        registration:
+          transfer-service:
+            client-id: transfer-service
+            client-secret: transfer-secret
+            authorization-grant-type: client_credentials
+            scope: transfer.write,transfer.read,accounts.read,accounts.write,notifications.send,exchange.read
+        provider:
+          transfer-service:
+            token-uri: ${TOKEN_URI:http://auth-server:9100/oauth2/token}
+
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: 5000
+            readTimeout: 10000
+      circuitbreaker:
+        enabled: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka-server:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+security:
+  internal-client:
+    registration-id: transfer-service
+    forward-user-token: false
+
+clients:
+  gateway-service:
+    url: http://gateway-service:8080
+
+logging:
+  level:
+    com.bank.common.config.OAuth2FeignConfig: DEBUG
+    org.springframework.security.oauth2.client: DEBUG
+    feign: DEBUG
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

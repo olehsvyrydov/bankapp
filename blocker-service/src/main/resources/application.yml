@@ -1,0 +1,51 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: blocker-service
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://auth-server:9100
+      client:
+        registration:
+          blocker-service:
+            client-id: blocker-service
+            client-secret: blocker-secret
+            authorization-grant-type: client_credentials
+            scope: blocker.check
+        provider:
+          blocker-service:
+            token-uri: http://auth-server:9100/oauth2/token
+
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: 5000
+            readTimeout: 10000
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+
+security:
+  internal-client:
+    registration-id: blocker-service
+
+blocker:
+  max-amount-threshold: 10000
+  suspicious-probability: 0.2
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+

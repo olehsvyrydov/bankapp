@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: notifications-service
+  datasource:
+    url: jdbc:postgresql://postgres:5432/notificationsdb
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+  cloud:
+    discovery:
+      enabled: true
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME}
+    password: ${SMTP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+server:
+  port: 8086
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+notification:
+  templates:
+    transfer-success: "Your transfer of {amount} {currency} to account {recipient} was successful."
+    transfer-failed: "Your transfer of {amount} {currency} to account {recipient} has failed: {reason}"
+    account-blocked: "Your account has been blocked due to suspicious activity. Please contact support."
+    balance-low: "Your account balance is below the minimum threshold of {amount} {currency}."
