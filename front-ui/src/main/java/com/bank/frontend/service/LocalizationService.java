@@ -2,6 +2,7 @@ package com.bank.frontend.service;
 
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.NoSuchMessageException;
@@ -14,6 +15,7 @@ import org.springframework.validation.ObjectError;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class LocalizationService {
 
     private final MessageSource messageSource;
@@ -27,6 +29,7 @@ public class LocalizationService {
      */
     public String getMessage(String code, Object... args) {
         Locale locale = LocaleContextHolder.getLocale();
+        log.debug("Getting message for code '{}' with locale '{}'", code, locale);
         return messageSource.getMessage(code, args, locale);
     }
 
@@ -41,6 +44,7 @@ public class LocalizationService {
      */
     public String getMessageOrDefault(String code, String defaultMessage, Object... args) {
         Locale locale = LocaleContextHolder.getLocale();
+        log.debug("Getting message or default for code '{}' with locale '{}', default: '{}'", code, locale, defaultMessage);
         return messageSource.getMessage(code, args, defaultMessage, locale);
     }
 

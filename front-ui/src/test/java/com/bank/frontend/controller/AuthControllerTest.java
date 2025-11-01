@@ -70,8 +70,23 @@ class AuthControllerTest {
         stubMessage("register.service.unavailable", "Registration service unavailable. Please try again later.");
         stubMessage("register.error.details", "Registration failed. Please check your details and try again.");
         stubMessage("register.error.tryAgain", "Registration failed. Please try again.");
+        stubMessage("register.error.usernameExists", "Username already exists");
+        stubMessage("register.error.trySuggestion", "Try: {0}");
         stubMessage("auth.password.change.success", "Password changed successfully");
         stubMessage("auth.password.change.error", "Failed to change password. Please try again.");
+        stubMessage("validation.birthDate.required", "Birth date is required");
+        stubMessage("validation.birthDate.past", "Birth date must be in the past");
+        stubMessage("message.ageTooYoung", "You must be at least 18 years old");
+
+        // Stub the no-args getMessage method for username exists
+        lenient().when(localizationService.getMessage("register.error.usernameExists"))
+            .thenReturn("Username already exists");
+
+        // Stub getMessageOrDefault for any key and default
+        lenient().when(localizationService.getMessageOrDefault(anyString(), anyString()))
+            .thenAnswer(invocation -> invocation.getArgument(1)); // Return the default message
+        lenient().when(localizationService.getMessageOrDefault(anyString(), anyString(), any(Object[].class)))
+            .thenAnswer(invocation -> invocation.getArgument(1)); // Return the default message
     }
 
     private void stubMessage(String key, String value) {
@@ -628,6 +643,31 @@ class AuthControllerTest {
         }
 
         @Test
+        @DisplayName("Should return localized error when user is under minimum age")
+        void performRegister_UnderageUser() {
+            // Given
+            RegisterRequest underageRequest = new RegisterRequest(
+                "teenuser",
+                "Teen",
+                "User",
+                "password123",
+                "password123",
+                "teen@example.com",
+                LocalDate.now().minusYears(10)
+            );
+
+            // When
+            String result = authController.performRegister(underageRequest, session, model);
+
+            // Then
+            assertThat(result).isEqualTo("register");
+            verify(model).addAttribute("error", "You must be at least 18 years old");
+            verify(model).addAttribute("registerRequest", underageRequest);
+            verify(authService, never()).register(any());
+            verify(accountsClient, never()).createUserAccount(any());
+        }
+
+        @Test
         @DisplayName("Should return user-friendly error when registration fails with simple message")
         void performRegister_RegistrationFailsWithSimpleMessage() {
             // Given
@@ -639,12 +679,14 @@ class AuthControllerTest {
 
             // Then
             assertThat(result).isEqualTo("register");
-            verify(model).addAttribute("error", "Username already exists");
+            // Now expecting the error with username suggestion since first and last names are provided
+            verify(model).addAttribute(eq("error"), argThat((String error) ->
+                error.startsWith("Username already exists")));
             verify(model).addAttribute("registerRequest", registerRequest);
         }
 
         @Test
-        @DisplayName("Should return default error when registration fails with JSON error")
+        @DisplayName("Should return extracted error when registration fails with JSON error")
         void performRegister_RegistrationFailsWithJsonError() {
             // Given
             String jsonError = "{\"status\":500,\"error\":\"Internal Server Error\",\"message\":\"Database connection failed\"}";
@@ -656,7 +698,8 @@ class AuthControllerTest {
 
             // Then
             assertThat(result).isEqualTo("register");
-            verify(model).addAttribute("error", "Registration failed. Please check your details and try again.");
+            // Now expecting the extracted message from JSON
+            verify(model).addAttribute("error", "Database connection failed");
             verify(model).addAttribute("registerRequest", registerRequest);
         }
 

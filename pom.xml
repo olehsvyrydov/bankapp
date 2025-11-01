@@ -27,7 +27,6 @@
         <module>blocker-service</module>
         <module>notifications-service</module>
         <module>front-ui</module>
-        <module>untitled</module>
     </modules>
 
     <properties>

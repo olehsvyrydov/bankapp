@@ -51,7 +51,8 @@ public class MessageHelper {
         // Convert to message key format: error.backend.{normalized message}
         String normalized = trimmed
             .toLowerCase()
-            .replaceAll("[^a-z0-9\\s]", "") // Remove special characters
+            .replaceAll("-", " ") // Convert hyphens to spaces first (will become dots)
+            .replaceAll("[^a-z0-9\\s]", "") // Remove special characters except spaces
             .replaceAll("\\s+", "."); // Replace spaces with dots
 
         return "error.backend." + normalized;
@@ -94,6 +95,47 @@ public class MessageHelper {
             return trimmed;
         }
 
+        return null;
+    }
+
+    /**
+     * Extracts validation errors from JSON response.
+     * Returns a comma-separated string of validation error messages.
+     *
+     * @param rawMessage the raw error message that may contain JSON with validationErrors
+     * @return comma-separated validation error messages, or null if none found
+     */
+    public static String extractValidationErrors(String rawMessage) {
+        if (rawMessage == null || rawMessage.isBlank()) {
+            return null;
+        }
+
+        String trimmed = rawMessage.trim();
+        if (trimmed.contains("{") && trimmed.contains("}")) {
+            int jsonStart = trimmed.indexOf('{');
+            int jsonEnd = trimmed.lastIndexOf('}') + 1;
+            if (jsonStart >= 0 && jsonEnd > jsonStart) {
+                String jsonPart = trimmed.substring(jsonStart, jsonEnd);
+                try {
+                    JsonNode node = OBJECT_MAPPER.readTree(jsonPart);
+                    if (node.isObject() && node.has("validationErrors")) {
+                        JsonNode validationErrors = node.get("validationErrors");
+                        if (validationErrors != null && validationErrors.isObject()) {
+                            StringBuilder errors = new StringBuilder();
+                            validationErrors.fields().forEachRemaining(entry -> {
+                                if (errors.length() > 0) {
+                                    errors.append(", ");
+                                }
+                                errors.append(entry.getValue().asText());
+                            });
+                            return errors.length() > 0 ? errors.toString() : null;
+                        }
+                    }
+                } catch (Exception ex) {
+                    log.debug("Unable to extract validation errors from JSON: {}", jsonPart, ex);
+                }
+            }
+        }
         return null;
     }
 

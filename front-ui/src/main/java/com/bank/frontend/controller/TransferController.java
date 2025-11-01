@@ -82,12 +82,8 @@ public class TransferController {
 
             String errorMessage = null;
             if (messageKey != null) {
-                // Try to use localized message if key exists
-                try {
-                    errorMessage = localizationService.getMessage(messageKey);
-                } catch (Exception ex) {
-                    log.debug("No localized message found for key: {}", messageKey);
-                }
+                // Try to use localized message if key exists, use backend message as fallback
+                errorMessage = localizationService.getMessageOrDefault(messageKey, backendMessage);
             }
 
             // Fall back to backend message if localization didn't work
@@ -153,28 +149,31 @@ public class TransferController {
 
             // Extract the actual error message from JSON response
             String backendMessage = MessageHelper.extractReadable(e.getMessage());
+            log.debug("Extracted backend message: '{}'", backendMessage);
+
             String messageKey = MessageHelper.toMessageKey(backendMessage);
+            log.debug("Generated message key: '{}'", messageKey);
 
             String errorMessage = null;
             if (messageKey != null) {
-                // Try to use localized message if key exists
-                try {
-                    errorMessage = localizationService.getMessage(messageKey);
-                } catch (Exception ex) {
-                    log.debug("No localized message found for key: {}", messageKey);
-                }
+                // Try to use localized message if key exists, use backend message as fallback
+                errorMessage = localizationService.getMessageOrDefault(messageKey, backendMessage);
+                log.debug("Localized error message: '{}'", errorMessage);
             }
 
             // Fall back to backend message if localization didn't work
             if (errorMessage == null || errorMessage.isBlank()) {
                 if (backendMessage != null && !backendMessage.isBlank()) {
                     errorMessage = backendMessage;
+                    log.debug("Using backend message as fallback: '{}'", errorMessage);
                 } else {
                     // Final fallback to default error message
                     errorMessage = localizationService.getMessage("transfer.error");
+                    log.debug("Using default error message: '{}'", errorMessage);
                 }
             }
 
+            log.info("Final error message to display: '{}'", errorMessage);
             redirectAttributes.addFlashAttribute("error", errorMessage);
         }
 

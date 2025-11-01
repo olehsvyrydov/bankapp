@@ -74,12 +74,8 @@ public class BankAccountController {
 
             String errorMessage = null;
             if (messageKey != null) {
-                // Try to use localized message if key exists
-                try {
-                    errorMessage = localizationService.getMessage(messageKey);
-                } catch (Exception ex) {
-                    log.debug("No localized message found for key: {}", messageKey);
-                }
+                // Try to use localized message if key exists, use backend message as fallback
+                errorMessage = localizationService.getMessageOrDefault(messageKey, backendMessage);
             }
 
             // Fall back to backend message if localization didn't work
@@ -135,12 +131,8 @@ public class BankAccountController {
 
             String errorMessage = null;
             if (messageKey != null) {
-                // Try to use localized message if key exists
-                try {
-                    errorMessage = localizationService.getMessage(messageKey);
-                } catch (Exception ex) {
-                    log.debug("No localized message found for key: {}", messageKey);
-                }
+                // Try to use localized message if key exists, use backend message as fallback
+                errorMessage = localizationService.getMessageOrDefault(messageKey, backendMessage);
             }
 
             // Fall back to backend message if localization didn't work

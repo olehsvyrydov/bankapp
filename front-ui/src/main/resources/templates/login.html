@@ -10,7 +10,7 @@
 <body>
 <div class="container">
     <div class="language-bar">
-        <div th:replace="fragments/language-switch :: languageSelector"></div>
+        <div th:replace="~{fragments/language-switch :: languageSelector}"></div>
     </div>
     <div class="login-box">
         <h2 th:text="#{login.title}">Bank Login</h2>
