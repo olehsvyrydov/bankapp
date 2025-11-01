@@ -3,6 +3,7 @@ package com.bank.frontend.controller;
 import com.bank.common.dto.ApiResponse;
 import com.bank.common.dto.contracts.accounts.CreateBankAccountRequest;
 import com.bank.frontend.service.AccountServiceClient;
+import com.bank.frontend.service.LocalizationService;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,6 +31,9 @@ class BankAccountControllerTest {
     private AccountServiceClient accountServiceClient;
 
     @Mock
+    private LocalizationService localizationService;
+
+    @Mock
     private HttpSession session;
 
     @Mock
@@ -50,6 +54,24 @@ class BankAccountControllerTest {
             .build();
 
         when(session.getAttribute("username")).thenReturn("testuser");
+        lenient().when(localizationService.resolveMessage(any()))
+            .thenAnswer(invocation -> {
+                Object error = invocation.getArgument(0);
+                if (error instanceof org.springframework.validation.ObjectError objectError) {
+                    return objectError.getDefaultMessage();
+                }
+                return "";
+            });
+        lenient().when(localizationService.getMessage(eq("bankAccount.create.success"), any(Object[].class)))
+            .thenReturn("Bank account created successfully");
+        lenient().when(localizationService.getMessage(eq("bankAccount.create.error"), any(Object[].class)))
+            .thenReturn("Failed to create bank account. Please try again.");
+        lenient().when(localizationService.getMessage(eq("bankAccount.invalidId"), any(Object[].class)))
+            .thenReturn("Invalid bank account ID");
+        lenient().when(localizationService.getMessage(eq("bankAccount.delete.success"), any(Object[].class)))
+            .thenReturn("Bank account deleted successfully");
+        lenient().when(localizationService.getMessage(eq("bankAccount.delete.error"), any(Object[].class)))
+            .thenReturn("Failed to delete bank account. Please try again.");
     }
 
     @Nested
@@ -300,6 +322,24 @@ class BankAccountControllerTest {
             // Given
             Long bankAccountId = 123L;
             when(session.getAttribute("username")).thenReturn("testuser");
+        lenient().when(localizationService.resolveMessage(any()))
+            .thenAnswer(invocation -> {
+                Object error = invocation.getArgument(0);
+                if (error instanceof org.springframework.validation.ObjectError objectError) {
+                    return objectError.getDefaultMessage();
+                }
+                return "";
+            });
+        lenient().when(localizationService.getMessage(eq("bankAccount.create.success"), any(Object[].class)))
+            .thenReturn("Bank account created successfully");
+        lenient().when(localizationService.getMessage(eq("bankAccount.create.error"), any(Object[].class)))
+            .thenReturn("Failed to create bank account. Please try again.");
+        lenient().when(localizationService.getMessage(eq("bankAccount.invalidId"), any(Object[].class)))
+            .thenReturn("Invalid bank account ID");
+        lenient().when(localizationService.getMessage(eq("bankAccount.delete.success"), any(Object[].class)))
+            .thenReturn("Bank account deleted successfully");
+        lenient().when(localizationService.getMessage(eq("bankAccount.delete.error"), any(Object[].class)))
+            .thenReturn("Failed to delete bank account. Please try again.");
             doNothing().when(accountServiceClient).deleteBankAccount(bankAccountId);
 
             // When

@@ -3,6 +3,7 @@ package com.bank.frontend.controller;
 import com.bank.common.dto.contracts.accounts.CreateBankAccountRequest;
 import com.bank.common.util.ErrorMessageUtil;
 import com.bank.frontend.service.AccountServiceClient;
+import com.bank.frontend.service.LocalizationService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.stream.Collectors;
 
+
 /**
  * Controller for managing bank account operations.
  */
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 public class BankAccountController {
 
     private final AccountServiceClient accountServiceClient;
+    private final LocalizationService localizationService;
 
     /**
      * Creates a new bank account in the specified currency.
@@ -49,7 +52,7 @@ public class BankAccountController {
         // Check for validation errors
         if (bindingResult.hasErrors()) {
             String errorMessage = bindingResult.getAllErrors().stream()
-                .map(error -> error.getDefaultMessage())
+                .map(localizationService::resolveMessage)
                 .collect(Collectors.joining(", "));
             log.warn("Validation failed for bank account creation: {}", errorMessage);
             redirectAttributes.addFlashAttribute("error", errorMessage);
@@ -59,13 +62,14 @@ public class BankAccountController {
         try {
             accountServiceClient.createBankAccount(request);
             log.info("Bank account created successfully for user: {} with currency: {}", username, request.getCurrency());
-            redirectAttributes.addFlashAttribute("success", "Bank account created successfully");
+            redirectAttributes.addFlashAttribute("success", localizationService.getMessage("bankAccount.create.success"));
         } catch (Exception e) {
             log.error("Failed to create bank account for user {}: {}", username,
                 ErrorMessageUtil.sanitizeForLogging(e.getMessage()));
+            String defaultMessage = localizationService.getMessage("bankAccount.create.error");
             String friendlyMessage = ErrorMessageUtil.extractUserFriendlyMessage(
                 e.getMessage(),
-                "Failed to create bank account. Please try again."
+                defaultMessage
             );
             redirectAttributes.addFlashAttribute("error", friendlyMessage);
         }
@@ -92,20 +96,21 @@ public class BankAccountController {
         // Validate bank account ID
         if (bankAccountId == null || bankAccountId <= 0) {
             log.warn("Invalid bank account ID provided: {}", bankAccountId);
-            redirectAttributes.addFlashAttribute("error", "Invalid bank account ID");
+            redirectAttributes.addFlashAttribute("error", localizationService.getMessage("bankAccount.invalidId"));
             return "redirect:/home";
         }
 
         try {
             accountServiceClient.deleteBankAccount(bankAccountId);
             log.info("Bank account deleted successfully for user: {}, accountId: {}", username, bankAccountId);
-            redirectAttributes.addFlashAttribute("success", "Bank account deleted successfully");
+            redirectAttributes.addFlashAttribute("success", localizationService.getMessage("bankAccount.delete.success"));
         } catch (Exception e) {
             log.error("Failed to delete bank account for user {}, accountId {}: {}", username, bankAccountId,
                 ErrorMessageUtil.sanitizeForLogging(e.getMessage()));
+            String defaultMessage = localizationService.getMessage("bankAccount.delete.error");
             String friendlyMessage = ErrorMessageUtil.extractUserFriendlyMessage(
                 e.getMessage(),
-                "Failed to delete bank account. Please try again."
+                defaultMessage
             );
             redirectAttributes.addFlashAttribute("error", friendlyMessage);
         }

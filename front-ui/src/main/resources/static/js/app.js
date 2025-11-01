@@ -6,10 +6,11 @@ document.addEventListener('DOMContentLoaded', function() {
         registerForm.addEventListener('submit', function(e) {
             const birthDate = document.getElementById('birthDate').value;
             const age = calculateAge(new Date(birthDate));
+            const ageMessage = registerForm.dataset.ageMessage || 'You must be at least 18 years old to register.';
 
             if (age < 18) {
                 e.preventDefault();
-                alert('You must be at least 18 years old to register.');
+                alert(ageMessage);
                 return false;
             }
         });
@@ -20,16 +21,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const toAccount = document.getElementById('toAccount');
 
     if (fromAccount && toAccount) {
+        const sameAccountMessage = document.body.dataset.transferSameAccount || 'Cannot transfer to the same account';
         fromAccount.addEventListener('change', function() {
             if (fromAccount.value === toAccount.value) {
-                alert('Cannot transfer to the same account');
+                alert(sameAccountMessage);
                 toAccount.value = '';
             }
         });
 
         toAccount.addEventListener('change', function() {
             if (fromAccount.value === toAccount.value) {
-                alert('Cannot transfer to the same account');
+                alert(sameAccountMessage);
                 toAccount.value = '';
             }
         });
@@ -108,8 +110,9 @@ function refreshExchangeRates() {
 // Form validation helpers
 function validateAmount(input) {
     const value = parseFloat(input.value);
+    const positiveMessage = document.body.dataset.amountPositive || 'Amount must be positive';
     if (value <= 0) {
-        alert('Amount must be positive');
+        alert(positiveMessage);
         input.value = '';
         return false;
     }

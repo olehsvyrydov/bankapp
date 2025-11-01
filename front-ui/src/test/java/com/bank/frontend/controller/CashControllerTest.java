@@ -2,6 +2,7 @@ package com.bank.frontend.controller;
 
 import com.bank.common.dto.contracts.cash.CashOperationRequest;
 import com.bank.frontend.service.CashServiceClient;
+import com.bank.frontend.service.LocalizationService;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,6 +29,9 @@ class CashControllerTest {
 
     @Mock
     private CashServiceClient cashServiceClient;
+
+    @Mock
+    private LocalizationService localizationService;
 
     @Mock
     private HttpSession session;
@@ -62,6 +66,22 @@ class CashControllerTest {
             .build();
 
         when(session.getAttribute("username")).thenReturn("testuser");
+        lenient().when(localizationService.resolveMessage(any()))
+            .thenAnswer(invocation -> {
+                Object error = invocation.getArgument(0);
+                if (error instanceof org.springframework.validation.ObjectError objectError) {
+                    return objectError.getDefaultMessage();
+                }
+                return "";
+            });
+        lenient().when(localizationService.getMessage(eq("cash.depositSuccess"), any(Object[].class)))
+            .thenReturn("Deposit completed successfully");
+        lenient().when(localizationService.getMessage(eq("cash.depositError"), any(Object[].class)))
+            .thenReturn("Deposit failed. Please try again.");
+        lenient().when(localizationService.getMessage(eq("cash.withdrawSuccess"), any(Object[].class)))
+            .thenReturn("Withdrawal completed successfully");
+        lenient().when(localizationService.getMessage(eq("cash.withdrawError"), any(Object[].class)))
+            .thenReturn("Withdrawal failed. Please try again.");
         doAnswer(invocation -> null).when(validator).validate(any(), any());
     }
 

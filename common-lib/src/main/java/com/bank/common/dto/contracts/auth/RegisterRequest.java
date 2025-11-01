@@ -10,31 +10,31 @@ import java.time.Instant;
 import java.time.LocalDate;
 
 public record RegisterRequest(
-    @NotBlank(message = "Username is required")
-    @Size(min = 3, max = 20)
+    @NotBlank(message = "{validation.username.required}")
+    @Size(min = 3, max = 20, message = "{validation.username.lengthShort}")
     String username,
 
-    @NotBlank(message = "First name is required")
-    @Size(min = 3, max = 20)
+    @NotBlank(message = "{validation.firstName.required}")
+    @Size(min = 3, max = 20, message = "{validation.firstName.lengthShort}")
     String firstName,
 
-    @NotBlank(message = "Last name is required")
-    @Size(min = 3, max = 50)
+    @NotBlank(message = "{validation.lastName.required}")
+    @Size(min = 3, max = 50, message = "{validation.lastName.lengthLong}")
     String lastName,
 
-    @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must be at least 6 characters")
+    @NotBlank(message = "{validation.password.required}")
+    @Size(min = 6, message = "{validation.password.minLength}")
     String password,
 
-    @NotBlank(message = "Confirm Password is required")
-    @Size(min = 6, message = "Password must be at least 6 characters")
+    @NotBlank(message = "{validation.confirmPassword.required}")
+    @Size(min = 6, message = "{validation.password.minLength}")
     String confirmPassword,
 
-    @Email(message = "Invalid email format")
-    @NotBlank(message = "Email is required")
+    @Email(message = "{validation.email.invalid}")
+    @NotBlank(message = "{validation.email.required}")
     String email,
 
-    @Past(message = "Birth date must be in the past")
+    @Past(message = "{validation.birthDate.past}")
     LocalDate birthDate
 )
 {

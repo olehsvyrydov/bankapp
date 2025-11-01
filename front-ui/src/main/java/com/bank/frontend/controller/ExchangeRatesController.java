@@ -3,6 +3,7 @@ package com.bank.frontend.controller;
 import com.bank.common.dto.contracts.exchange.ExchangeRateDTO;
 import com.bank.common.util.ErrorMessageUtil;
 import com.bank.frontend.service.ExchangeServiceClient;
+import com.bank.frontend.service.LocalizationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,7 @@ import java.util.Map;
 public class ExchangeRatesController {
 
     private final ExchangeServiceClient exchangeServiceClient;
+    private final LocalizationService localizationService;
 
     /**
      * Retrieves current exchange rates for all supported currencies.
@@ -50,9 +52,10 @@ public class ExchangeRatesController {
         } catch (Exception e) {
             log.error("Failed to fetch exchange rates: {}",
                 ErrorMessageUtil.sanitizeForLogging(e.getMessage()));
+            String defaultMessage = localizationService.getMessage("exchange.fetch.error");
             String friendlyMessage = ErrorMessageUtil.extractUserFriendlyMessage(
                 e.getMessage(),
-                "Failed to fetch exchange rates. Please try again."
+                defaultMessage
             );
             return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)

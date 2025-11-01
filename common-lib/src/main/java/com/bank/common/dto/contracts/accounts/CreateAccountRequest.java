@@ -15,24 +15,24 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class CreateAccountRequest {
 
-    @NotBlank(message = "Username is required")
-    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
+    @NotBlank(message = "{validation.username.required}")
+    @Size(min = 3, max = 50, message = "{validation.username.length}")
     private String username;
 
-    @NotBlank(message = "First name is required")
-    @Size(min = 2, max = 50, message = "First name must be between 2 and 50 characters")
+    @NotBlank(message = "{validation.firstName.required}")
+    @Size(min = 2, max = 50, message = "{validation.firstName.length}")
     private String firstName;
 
-    @NotBlank(message = "Last name is required")
-    @Size(min = 2, max = 50, message = "Last name must be between 2 and 50 characters")
+    @NotBlank(message = "{validation.lastName.required}")
+    @Size(min = 2, max = 50, message = "{validation.lastName.length}")
     private String lastName;
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Invalid email format")
+    @NotBlank(message = "{validation.email.required}")
+    @Email(message = "{validation.email.invalid}")
     private String email;
 
-    @NotNull(message = "Birth date is required")
-    @Past(message = "Birth date must be in the past")
+    @NotNull(message = "{validation.birthDate.required}")
+    @Past(message = "{validation.birthDate.past}")
     @MinAge
     private LocalDate birthDate;
 }

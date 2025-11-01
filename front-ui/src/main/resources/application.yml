@@ -21,7 +21,7 @@ spring:
 
   # Internationalization
   messages:
-    basename: i18n/messages
+    basename: "i18n/messages,ValidationMessages"
     encoding: UTF-8
     fallback-to-system-locale: false
     cache-duration: -1

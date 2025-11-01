@@ -1,7 +1,10 @@
 package com.bank.common.validation;
+
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
+
 import java.lang.annotation.*;
+
 /**
  * Validates that the annotated date field represents an age that is at least the specified minimum.
  * The age is calculated in years from the annotated date to the current date.
@@ -12,7 +15,7 @@ import java.lang.annotation.*;
 @Constraint(validatedBy = MinAgeValidator.class)
 @Documented
 public @interface MinAge {
-    String message() default "Must be at least {value} years old";
+    String message() default "{validation.minAge}";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
     /**

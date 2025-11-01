@@ -8,6 +8,7 @@ import com.bank.common.dto.contracts.auth.TokenResponse;
 import com.bank.common.util.ErrorMessageUtil;
 import com.bank.frontend.client.AccountsClient;
 import com.bank.frontend.service.AuthService;
+import com.bank.frontend.service.LocalizationService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -28,6 +29,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final AccountsClient accountsClient;
+    private final LocalizationService localizationService;
 
     @GetMapping("/")
     public String index(HttpSession session) {
@@ -58,16 +60,16 @@ public class AuthController {
         log.debug("Accessing login page");
 
         if (error != null) {
-            model.addAttribute("error", "Invalid username or password");
+            model.addAttribute("error", localizationService.getMessage("auth.invalidCredentials"));
         }
         if (logout != null) {
-            model.addAttribute("message", "You have been logged out successfully");
+            model.addAttribute("message", localizationService.getMessage("auth.logout.success"));
         }
         if (sessionExpired != null) {
-            model.addAttribute("error", "Your session has expired. Please log in again.");
+            model.addAttribute("error", localizationService.getMessage("auth.session.expired"));
         }
         if (registered != null) {
-            model.addAttribute("message", "Registration successful. Please log in.");
+            model.addAttribute("message", localizationService.getMessage("register.success.login"));
         }
         model.addAttribute("loginRequest", new LoginRequest());
         return "login";
@@ -86,7 +88,7 @@ public class AuthController {
 
             if (!response.isSuccess()) {
                 log.warn("Login failed for user {}: {}", loginRequest.getUsername(), response.getMessage());
-                model.addAttribute("error", "Invalid username or password");
+                model.addAttribute("error", localizationService.getMessage("auth.invalidCredentials"));
                 model.addAttribute("loginRequest", loginRequest);
                 return "login";
             }
@@ -105,13 +107,13 @@ public class AuthController {
             }
 
             log.warn("Login failed for user: {}", loginRequest.getUsername());
-            model.addAttribute("error", "Invalid username or password");
+            model.addAttribute("error", localizationService.getMessage("auth.invalidCredentials"));
             model.addAttribute("loginRequest", loginRequest);
             return "login";
 
         } catch (Exception e) {
             log.error("Login error for user {}: {}", loginRequest.getUsername(), e.getMessage());
-            model.addAttribute("error", "Authentication service unavailable. Please try again later.");
+            model.addAttribute("error", localizationService.getMessage("auth.service.unavailable"));
             model.addAttribute("loginRequest", loginRequest);
             return "login";
         }
@@ -139,14 +141,14 @@ public class AuthController {
 
         // Validate passwords match
         if (!registerRequest.password().equals(registerRequest.confirmPassword())) {
-            model.addAttribute("error", "Passwords do not match");
+            model.addAttribute("error", localizationService.getMessage("message.passwordMismatch"));
             model.addAttribute("registerRequest", registerRequest);
             return "register";
         }
 
         // Validate password length
         if (registerRequest.password().length() < 6) {
-            model.addAttribute("error", "Password must be at least 6 characters long");
+            model.addAttribute("error", localizationService.getMessage("message.passwordTooShort"));
             model.addAttribute("registerRequest", registerRequest);
             return "register";
         }
@@ -157,8 +159,9 @@ public class AuthController {
                 log.warn("Registration failed for user {}: {}", registerRequest.username(),
                     ErrorMessageUtil.sanitizeForLogging(response.getMessage()));
                 // Return user-friendly error message
+                String defaultMessage = localizationService.getMessage("register.error.details");
                 String errorMessage = ErrorMessageUtil.extractUserFriendlyMessage(response.getMessage(),
-                    "Registration failed. Please check your details and try again.");
+                    defaultMessage);
                 model.addAttribute("error", errorMessage);
                 model.addAttribute("registerRequest", registerRequest);
                 return "register";
@@ -173,7 +176,7 @@ public class AuthController {
                 var createAccountResponse = accountsClient.createUserAccount(accountsRequest);
                 if (!createAccountResponse.isSuccess()) {
                     log.error("Account creation failed for user {}: {}", registerRequest.username(), createAccountResponse.getMessage());
-                    model.addAttribute("error", "Unable to create account. Please try again later.");
+                    model.addAttribute("error", localizationService.getMessage("register.account.create.failure"));
                     model.addAttribute("registerRequest", registerRequest);
                     return "register";
                 }
@@ -183,7 +186,7 @@ public class AuthController {
 
         } catch (Exception e) {
             log.error("Registration error for user {}: {}", registerRequest.username(), e.getMessage());
-            model.addAttribute("error", "Registration service unavailable. Please try again later.");
+            model.addAttribute("error", localizationService.getMessage("register.service.unavailable"));
             model.addAttribute("registerRequest", registerRequest);
             return "register";
         }
@@ -208,7 +211,7 @@ public class AuthController {
             String username = (String) session.getAttribute("username");
 
             if (token == null || username == null) {
-                redirectAttributes.addFlashAttribute("error", "Session expired. Please login again.");
+                redirectAttributes.addFlashAttribute("error", localizationService.getMessage("auth.session.expired"));
                 return "redirect:/login";
             }
 
@@ -218,10 +221,10 @@ public class AuthController {
                 .build();
 
             authService.changePassword(request, token);
-            redirectAttributes.addFlashAttribute("success", "Password changed successfully");
+            redirectAttributes.addFlashAttribute("success", localizationService.getMessage("auth.password.change.success"));
         } catch (Exception e) {
             log.error("Password change error for user {}: {}", session.getAttribute("username"), e.getMessage());
-            redirectAttributes.addFlashAttribute("error", "Failed to change password. Please try again.");
+            redirectAttributes.addFlashAttribute("error", localizationService.getMessage("auth.password.change.error"));
         }
 
         return "redirect:/home";

@@ -3,10 +3,10 @@ package com.bank.frontend.controller;
 import com.bank.common.dto.contracts.cash.CashOperationRequest;
 import com.bank.common.util.ErrorMessageUtil;
 import com.bank.frontend.service.CashServiceClient;
+import com.bank.frontend.service.LocalizationService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.SmartValidator;
@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.stream.Collectors;
+
 
 /**
  * Controller for managing cash operations (deposits and withdrawals).
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 public class CashController {
 
     private final CashServiceClient cashServiceClient;
+    private final LocalizationService localizationService;
     private final SmartValidator validator;
 
     /**
@@ -55,7 +57,7 @@ public class CashController {
         // Check for validation errors
         if (bindingResult.hasErrors()) {
             String errorMessage = bindingResult.getAllErrors().stream()
-                .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                .map(localizationService::resolveMessage)
                 .collect(Collectors.joining(", "));
             log.warn("Validation failed for deposit: {}", errorMessage);
             redirectAttributes.addFlashAttribute("error", errorMessage);
@@ -66,13 +68,14 @@ public class CashController {
             cashServiceClient.deposit(request);
             log.info("Deposit completed successfully for user: {}, accountId: {}, amount: {}",
                 username, request.getBankAccountId(), request.getAmount());
-            redirectAttributes.addFlashAttribute("success", "Deposit completed successfully");
+            redirectAttributes.addFlashAttribute("success", localizationService.getMessage("cash.depositSuccess"));
         } catch (Exception e) {
             log.error("Deposit failed for user {}, accountId {}: {}", username, request.getBankAccountId(),
                 ErrorMessageUtil.sanitizeForLogging(e.getMessage()));
+            String defaultMessage = localizationService.getMessage("cash.depositError");
             String friendlyMessage = ErrorMessageUtil.extractUserFriendlyMessage(
                 e.getMessage(),
-                "Deposit failed. Please try again."
+                defaultMessage
             );
             redirectAttributes.addFlashAttribute("error", friendlyMessage);
         }
@@ -106,7 +109,7 @@ public class CashController {
         // Check for validation errors
         if (bindingResult.hasErrors()) {
             String errorMessage = bindingResult.getAllErrors().stream()
-                .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                .map(localizationService::resolveMessage)
                 .collect(Collectors.joining(", "));
             log.warn("Validation failed for withdrawal: {}", errorMessage);
             redirectAttributes.addFlashAttribute("error", errorMessage);
@@ -117,13 +120,14 @@ public class CashController {
             cashServiceClient.withdraw(request);
             log.info("Withdrawal completed successfully for user: {}, accountId: {}, amount: {}",
                 username, request.getBankAccountId(), request.getAmount());
-            redirectAttributes.addFlashAttribute("success", "Withdrawal completed successfully");
+            redirectAttributes.addFlashAttribute("success", localizationService.getMessage("cash.withdrawSuccess"));
         } catch (Exception e) {
             log.error("Withdrawal failed for user {}, accountId {}: {}", username, request.getBankAccountId(),
                 ErrorMessageUtil.sanitizeForLogging(e.getMessage()));
+            String defaultMessage = localizationService.getMessage("cash.withdrawError");
             String friendlyMessage = ErrorMessageUtil.extractUserFriendlyMessage(
                 e.getMessage(),
-                "Withdrawal failed. Please try again."
+                defaultMessage
             );
             redirectAttributes.addFlashAttribute("error", friendlyMessage);
         }

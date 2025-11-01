@@ -3,6 +3,7 @@ package com.bank.frontend.controller;
 import com.bank.common.dto.contracts.transfer.TransferRequest;
 import com.bank.common.util.ErrorMessageUtil;
 import com.bank.frontend.service.TransferServiceClient;
+import com.bank.frontend.service.LocalizationService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.stream.Collectors;
 
+
 /**
  * Controller for managing transfer operations between bank accounts.
  */
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
 public class TransferController {
 
     private final TransferServiceClient transferServiceClient;
+    private final LocalizationService localizationService;
 
     /**
      * Processes a transfer between user's own bank accounts.
@@ -49,7 +52,7 @@ public class TransferController {
         // Check for validation errors
         if (bindingResult.hasErrors()) {
             String errorMessage = bindingResult.getAllErrors().stream()
-                .map(error -> error.getDefaultMessage())
+                .map(localizationService::resolveMessage)
                 .collect(Collectors.joining(", "));
             log.warn("Validation failed for transfer: {}", errorMessage);
             redirectAttributes.addFlashAttribute("error", errorMessage);
@@ -59,7 +62,7 @@ public class TransferController {
         // Business rule: cannot transfer to the same account
         if (request.getFromBankAccountId().equals(request.getToBankAccountId())) {
             log.warn("User {} attempted to transfer to the same account: {}", username, request.getFromBankAccountId());
-            redirectAttributes.addFlashAttribute("error", "Cannot transfer to the same account");
+            redirectAttributes.addFlashAttribute("error", localizationService.getMessage("transfer.sameAccount"));
             return "redirect:/home";
         }
 
@@ -67,13 +70,14 @@ public class TransferController {
             transferServiceClient.transfer(request);
             log.info("Transfer completed successfully for user: {}, from: {}, to: {}, amount: {}",
                 username, request.getFromBankAccountId(), request.getToBankAccountId(), request.getAmount());
-            redirectAttributes.addFlashAttribute("success", "Transfer completed successfully");
+            redirectAttributes.addFlashAttribute("success", localizationService.getMessage("transfer.success"));
         } catch (Exception e) {
             log.error("Transfer failed for user {}: {}", username,
                 ErrorMessageUtil.sanitizeForLogging(e.getMessage()));
+            String defaultMessage = localizationService.getMessage("transfer.error");
             String friendlyMessage = ErrorMessageUtil.extractUserFriendlyMessage(
                 e.getMessage(),
-                "Transfer failed. Please try again."
+                defaultMessage
             );
             redirectAttributes.addFlashAttribute("error", friendlyMessage);
         }
@@ -103,7 +107,7 @@ public class TransferController {
         // Check for validation errors
         if (bindingResult.hasErrors()) {
             String errorMessage = bindingResult.getAllErrors().stream()
-                .map(error -> error.getDefaultMessage())
+                .map(localizationService::resolveMessage)
                 .collect(Collectors.joining(", "));
             log.warn("Validation failed for transfer: {}", errorMessage);
             redirectAttributes.addFlashAttribute("error", errorMessage);
@@ -113,7 +117,7 @@ public class TransferController {
         // Business rule: cannot transfer to the same account
         if (request.getFromBankAccountId().equals(request.getToBankAccountId())) {
             log.warn("User {} attempted to transfer to the same account: {}", username, request.getFromBankAccountId());
-            redirectAttributes.addFlashAttribute("error", "Cannot transfer to the same account");
+            redirectAttributes.addFlashAttribute("error", localizationService.getMessage("transfer.sameAccount"));
             return "redirect:/home";
         }
 
@@ -121,13 +125,14 @@ public class TransferController {
             transferServiceClient.transfer(request);
             log.info("Transfer to other completed successfully for user: {}, from: {}, to: {}, amount: {}",
                 username, request.getFromBankAccountId(), request.getToBankAccountId(), request.getAmount());
-            redirectAttributes.addFlashAttribute("success", "Transfer completed successfully");
+            redirectAttributes.addFlashAttribute("success", localizationService.getMessage("transfer.success"));
         } catch (Exception e) {
             log.error("Transfer to other failed for user {}: {}", username,
                 ErrorMessageUtil.sanitizeForLogging(e.getMessage()));
+            String defaultMessage = localizationService.getMessage("transfer.error");
             String friendlyMessage = ErrorMessageUtil.extractUserFriendlyMessage(
                 e.getMessage(),
-                "Transfer failed. Please try again."
+                defaultMessage
             );
             redirectAttributes.addFlashAttribute("error", friendlyMessage);
         }

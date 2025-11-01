@@ -14,10 +14,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ChangePasswordRequest
 {
-    @NotBlank(message = "Username is required")
+    @NotBlank(message = "{validation.username.required}")
     private String username;
 
-    @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must be at least 6 characters")
+    @NotBlank(message = "{validation.password.required}")
+    @Size(min = 6, message = "{validation.password.minLength}")
     private String newPassword;
 }

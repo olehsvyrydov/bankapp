@@ -13,11 +13,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CashOperationRequest {
 
-    @NotNull(message = "Bank account ID is required")
+    @NotNull(message = "{validation.bankAccountId.required}")
     private Long bankAccountId;
 
-    @NotNull(message = "Amount is required")
-    @Positive(message = "Amount must be positive")
+    @NotNull(message = "{validation.amount.required}")
+    @Positive(message = "{validation.amount.positive}")
     private Double amount;
 
     private String type; // DEPOSIT or WITHDRAWAL

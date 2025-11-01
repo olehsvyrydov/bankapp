@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateBankAccountRequest {
 
-    @NotBlank(message = "Currency is required")
-    @Pattern(regexp = "RUB|USD|CNY", message = "Currency must be RUB, USD, or CNY")
+    @NotBlank(message = "{validation.currency.required}")
+    @Pattern(regexp = "RUB|USD|CNY", message = "{validation.currency.allowed}")
     private String currency;
 }

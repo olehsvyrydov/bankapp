@@ -2,6 +2,7 @@ package com.bank.frontend.controller;
 
 import com.bank.common.dto.contracts.transfer.TransferRequest;
 import com.bank.frontend.service.TransferServiceClient;
+import com.bank.frontend.service.LocalizationService;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,6 +30,9 @@ class TransferControllerTest {
     private TransferServiceClient transferServiceClient;
 
     @Mock
+    private LocalizationService localizationService;
+
+    @Mock
     private HttpSession session;
 
     @Mock
@@ -51,6 +55,20 @@ class TransferControllerTest {
             .build();
 
         when(session.getAttribute("username")).thenReturn("testuser");
+        lenient().when(localizationService.resolveMessage(any()))
+            .thenAnswer(invocation -> {
+                Object error = invocation.getArgument(0);
+                if (error instanceof org.springframework.validation.ObjectError objectError) {
+                    return objectError.getDefaultMessage();
+                }
+                return "";
+            });
+        lenient().when(localizationService.getMessage(eq("transfer.sameAccount"), any(Object[].class)))
+            .thenReturn("Cannot transfer to the same account");
+        lenient().when(localizationService.getMessage(eq("transfer.success"), any(Object[].class)))
+            .thenReturn("Transfer completed successfully");
+        lenient().when(localizationService.getMessage(eq("transfer.error"), any(Object[].class)))
+            .thenReturn("Transfer failed. Please try again.");
     }
 
     @Nested
@@ -306,6 +324,20 @@ class TransferControllerTest {
             // Given
             when(bindingResult.hasErrors()).thenReturn(false);
             when(session.getAttribute("username")).thenReturn("testuser");
+        lenient().when(localizationService.resolveMessage(any()))
+            .thenAnswer(invocation -> {
+                Object error = invocation.getArgument(0);
+                if (error instanceof org.springframework.validation.ObjectError objectError) {
+                    return objectError.getDefaultMessage();
+                }
+                return "";
+            });
+        lenient().when(localizationService.getMessage(eq("transfer.sameAccount"), any(Object[].class)))
+            .thenReturn("Cannot transfer to the same account");
+        lenient().when(localizationService.getMessage(eq("transfer.success"), any(Object[].class)))
+            .thenReturn("Transfer completed successfully");
+        lenient().when(localizationService.getMessage(eq("transfer.error"), any(Object[].class)))
+            .thenReturn("Transfer failed. Please try again.");
             doNothing().when(transferServiceClient).transfer(any());
 
             // When

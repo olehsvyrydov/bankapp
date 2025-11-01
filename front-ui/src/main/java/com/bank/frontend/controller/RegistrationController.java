@@ -3,6 +3,7 @@ package com.bank.frontend.controller;
 import com.bank.common.dto.contracts.accounts.CreateAccountRequest;
 import com.bank.common.util.ErrorMessageUtil;
 import com.bank.frontend.service.AccountServiceClient;
+import com.bank.frontend.service.LocalizationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.stream.Collectors;
 
+
 /**
  * Controller for user registration operations.
  * Note: This endpoint is public and doesn't require authentication.
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 public class RegistrationController {
 
     private final AccountServiceClient accountServiceClient;
+    private final LocalizationService localizationService;
 
     /**
      * Processes user registration.
@@ -43,7 +46,7 @@ public class RegistrationController {
         // Check for validation errors
         if (bindingResult.hasErrors()) {
             String errorMessage = bindingResult.getAllErrors().stream()
-                .map(error -> error.getDefaultMessage())
+                .map(localizationService::resolveMessage)
                 .collect(Collectors.joining(", "));
             log.warn("Validation failed for registration of user {}: {}", request.getUsername(), errorMessage);
             model.addAttribute("error", errorMessage);
@@ -55,13 +58,14 @@ public class RegistrationController {
             log.info("Creating account for user: {}", request.getUsername());
             accountServiceClient.createAccount(request);
             log.info("Account created successfully for user: {}", request.getUsername());
-            return "redirect:/login?registered";
+            return "redirect:/login?registered=true";
         } catch (Exception e) {
             log.error("Registration failed for user {}: {}", request.getUsername(),
                 ErrorMessageUtil.sanitizeForLogging(e.getMessage()));
+            String defaultMessage = localizationService.getMessage("register.error.tryAgain");
             String friendlyMessage = ErrorMessageUtil.extractUserFriendlyMessage(
                 e.getMessage(),
-                "Registration failed. Please try again."
+                defaultMessage
             );
             model.addAttribute("error", friendlyMessage);
             model.addAttribute("createAccountRequest", request);

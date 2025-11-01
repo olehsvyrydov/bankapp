@@ -1,7 +1,10 @@
 package com.bank.common.validation;
+
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
+
 import java.lang.annotation.*;
+
 /**
  * Validates that the annotated date field represents an age that is not greater than the specified maximum.
  * The age is calculated in years from the annotated date to the current date.
@@ -11,7 +14,7 @@ import java.lang.annotation.*;
 @Constraint(validatedBy = MaxAgeValidator.class)
 @Documented
 public @interface MaxAge {
-    String message() default "Age must not exceed {value} years";
+    String message() default "{validation.maxAge}";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
     /**

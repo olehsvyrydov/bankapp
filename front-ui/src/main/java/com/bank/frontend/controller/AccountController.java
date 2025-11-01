@@ -3,6 +3,7 @@ package com.bank.frontend.controller;
 import com.bank.common.dto.contracts.accounts.UpdateAccountRequest;
 import com.bank.common.util.ErrorMessageUtil;
 import com.bank.frontend.service.AccountServiceClient;
+import com.bank.frontend.service.LocalizationService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.stream.Collectors;
 
+
 /**
  * Controller for managing user account operations.
  */
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
 public class AccountController {
 
     private final AccountServiceClient accountServiceClient;
+    private final LocalizationService localizationService;
 
     /**
      * Updates user account information.
@@ -49,7 +52,7 @@ public class AccountController {
         // Check for validation errors
         if (bindingResult.hasErrors()) {
             String errorMessage = bindingResult.getAllErrors().stream()
-                .map(error -> error.getDefaultMessage())
+                .map(localizationService::resolveMessage)
                 .collect(Collectors.joining(", "));
             log.warn("Validation failed for account update: {}", errorMessage);
             redirectAttributes.addFlashAttribute("error", errorMessage);
@@ -59,13 +62,14 @@ public class AccountController {
         try {
             accountServiceClient.updateAccount(request);
             log.info("Account updated successfully for user: {}", username);
-            redirectAttributes.addFlashAttribute("success", "Account updated successfully");
+            redirectAttributes.addFlashAttribute("success", localizationService.getMessage("account.update.success"));
         } catch (Exception e) {
             log.error("Failed to update account for user {}: {}", username,
                 ErrorMessageUtil.sanitizeForLogging(e.getMessage()));
+            String defaultMessage = localizationService.getMessage("account.update.error");
             String friendlyMessage = ErrorMessageUtil.extractUserFriendlyMessage(
                 e.getMessage(),
-                "Failed to update account. Please try again."
+                defaultMessage
             );
             redirectAttributes.addFlashAttribute("error", friendlyMessage);
         }

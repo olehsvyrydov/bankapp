@@ -9,6 +9,7 @@ import com.bank.common.dto.contracts.auth.RegisterRequest;
 import com.bank.common.dto.contracts.auth.TokenResponse;
 import com.bank.common.exception.BusinessException;
 import com.bank.frontend.client.AccountsClient;
+import com.bank.frontend.service.LocalizationService;
 import com.bank.frontend.service.AuthService;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +40,9 @@ class AuthControllerTest {
     private AccountsClient accountsClient;
 
     @Mock
+    private LocalizationService localizationService;
+
+    @Mock
     private HttpSession session;
 
     @Mock
@@ -54,7 +58,27 @@ class AuthControllerTest {
         loginRequest = new LoginRequest();
         loginRequest.setUsername("testuser");
         loginRequest.setPassword("password123");
+
+        stubMessage("auth.invalidCredentials", "Invalid username or password");
+        stubMessage("auth.service.unavailable", "Authentication service unavailable. Please try again later.");
+        stubMessage("auth.logout.success", "You have been logged out successfully");
+        stubMessage("auth.session.expired", "Your session has expired. Please log in again.");
+        stubMessage("register.success.login", "Registration successful. Please log in.");
+        stubMessage("message.passwordMismatch", "Passwords do not match");
+        stubMessage("message.passwordTooShort", "Password must be at least 6 characters");
+        stubMessage("register.account.create.failure", "Unable to create account. Please try again later.");
+        stubMessage("register.service.unavailable", "Registration service unavailable. Please try again later.");
+        stubMessage("register.error.details", "Registration failed. Please check your details and try again.");
+        stubMessage("register.error.tryAgain", "Registration failed. Please try again.");
+        stubMessage("auth.password.change.success", "Password changed successfully");
+        stubMessage("auth.password.change.error", "Failed to change password. Please try again.");
     }
+
+    private void stubMessage(String key, String value) {
+        lenient().when(localizationService.getMessage(eq(key), any(Object[].class)))
+            .thenReturn(value);
+    }
+
 
     @Test
     @DisplayName("Should successfully login and redirect to home when credentials are valid")
@@ -598,7 +622,7 @@ class AuthControllerTest {
 
             // Then
             assertThat(result).isEqualTo("register");
-            verify(model).addAttribute("error", "Password must be at least 6 characters long");
+            verify(model).addAttribute("error", "Password must be at least 6 characters");
             verify(model).addAttribute("registerRequest", shortPasswordRequest);
             verify(authService, never()).register(any());
         }
@@ -700,6 +724,14 @@ class AuthControllerTest {
         void logout_WithUsername() {
             // Given
             when(session.getAttribute("username")).thenReturn("testuser");
+        lenient().when(localizationService.resolveMessage(any()))
+            .thenAnswer(invocation -> {
+                Object error = invocation.getArgument(0);
+                if (error instanceof org.springframework.validation.ObjectError objectError) {
+                    return objectError.getDefaultMessage();
+                }
+                return "";
+            });
 
             // When
             String result = authController.logout(session);
@@ -739,6 +771,14 @@ class AuthControllerTest {
             // Given
             when(session.getAttribute("access_token")).thenReturn("valid-token");
             when(session.getAttribute("username")).thenReturn("testuser");
+        lenient().when(localizationService.resolveMessage(any()))
+            .thenAnswer(invocation -> {
+                Object error = invocation.getArgument(0);
+                if (error instanceof org.springframework.validation.ObjectError objectError) {
+                    return objectError.getDefaultMessage();
+                }
+                return "";
+            });
             doNothing().when(authService).changePassword(any(ChangePasswordRequest.class), anyString());
 
             // When
@@ -757,13 +797,21 @@ class AuthControllerTest {
             // Given
             when(session.getAttribute("access_token")).thenReturn(null);
             when(session.getAttribute("username")).thenReturn("testuser");
+        lenient().when(localizationService.resolveMessage(any()))
+            .thenAnswer(invocation -> {
+                Object error = invocation.getArgument(0);
+                if (error instanceof org.springframework.validation.ObjectError objectError) {
+                    return objectError.getDefaultMessage();
+                }
+                return "";
+            });
 
             // When
             String result = authController.changePassword(session, "newPassword123", redirectAttributes);
 
             // Then
             assertThat(result).isEqualTo("redirect:/login");
-            verify(redirectAttributes).addFlashAttribute("error", "Session expired. Please login again.");
+            verify(redirectAttributes).addFlashAttribute("error", "Your session has expired. Please log in again.");
             verify(authService, never()).changePassword(any(), anyString());
         }
 
@@ -779,7 +827,7 @@ class AuthControllerTest {
 
             // Then
             assertThat(result).isEqualTo("redirect:/login");
-            verify(redirectAttributes).addFlashAttribute("error", "Session expired. Please login again.");
+            verify(redirectAttributes).addFlashAttribute("error", "Your session has expired. Please log in again.");
             verify(authService, never()).changePassword(any(), anyString());
         }
 
@@ -789,6 +837,14 @@ class AuthControllerTest {
             // Given
             when(session.getAttribute("access_token")).thenReturn("valid-token");
             when(session.getAttribute("username")).thenReturn("testuser");
+        lenient().when(localizationService.resolveMessage(any()))
+            .thenAnswer(invocation -> {
+                Object error = invocation.getArgument(0);
+                if (error instanceof org.springframework.validation.ObjectError objectError) {
+                    return objectError.getDefaultMessage();
+                }
+                return "";
+            });
             doThrow(new BusinessException("Failed to change password"))
                 .when(authService).changePassword(any(ChangePasswordRequest.class), anyString());
 
@@ -807,6 +863,14 @@ class AuthControllerTest {
             // Given
             when(session.getAttribute("access_token")).thenReturn("valid-token");
             when(session.getAttribute("username")).thenReturn("testuser");
+        lenient().when(localizationService.resolveMessage(any()))
+            .thenAnswer(invocation -> {
+                Object error = invocation.getArgument(0);
+                if (error instanceof org.springframework.validation.ObjectError objectError) {
+                    return objectError.getDefaultMessage();
+                }
+                return "";
+            });
             doThrow(new RuntimeException("Database connection timeout at line 456"))
                 .when(authService).changePassword(any(ChangePasswordRequest.class), anyString());
 

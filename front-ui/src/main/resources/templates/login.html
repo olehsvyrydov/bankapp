@@ -1,14 +1,19 @@
 <!DOCTYPE html>
 <html lang="en"
-      xmlns:th="http://www.thymeleaf.org">
+      xmlns:th="http://www.thymeleaf.org"
+      th:attr="lang=${#locale.language}">
 <head>
-    <title>Bank Login</title>
+    <meta charset="UTF-8">
+    <title th:text="#{app.name} + ' - ' + #{login.title}">Bank Login</title>
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
 <div class="container">
+    <div class="language-bar">
+        <div th:replace="fragments/language-switch :: languageSelector"></div>
+    </div>
     <div class="login-box">
-        <h2>Bank Login</h2>
+        <h2 th:text="#{login.title}">Bank Login</h2>
 
         <div th:if="${error}" class="alert alert-error">
             <span th:text="${error}"></span>
@@ -24,22 +29,23 @@
 
         <form th:action="@{/perform-login}" th:object="${loginRequest}" method="post">
             <div class="form-group">
-                <label>Username:
-                    <input type="text" th:field="*{username}" class="form-control" required autofocus />
-                </label>
+                <label th:for="*{username}" th:text="#{user.username} + ':'">Username:</label>
+                <input type="text" th:field="*{username}" class="form-control" required autofocus />
             </div>
 
             <div class="form-group">
-                <label>Password:
-                    <input type="password" th:field="*{password}" class="form-control" required />
-                </label>
+                <label th:for="*{password}" th:text="#{user.password} + ':'">Password:</label>
+                <input type="password" th:field="*{password}" class="form-control" required />
             </div>
 
-            <button type="submit" class="btn btn-primary btn-block">Login</button>
+            <button type="submit" class="btn btn-primary btn-block" th:text="#{login.button}">Login</button>
         </form>
 
         <div class="register-link">
-            <p>Don't have an account? <a th:href="@{/register}">Register here</a></p>
+            <p>
+                <span th:text="#{login.registerPrompt}">Don't have an account?</span>
+                <a th:href="@{/register}" th:text="#{login.registerLink}">Register here</a>
+            </p>
         </div>
     </div>
 </div>

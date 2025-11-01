@@ -2,6 +2,7 @@ package com.bank.frontend.controller;
 
 import com.bank.common.dto.contracts.accounts.UpdateAccountRequest;
 import com.bank.frontend.service.AccountServiceClient;
+import com.bank.frontend.service.LocalizationService;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,6 +31,9 @@ class AccountControllerTest {
     private AccountServiceClient accountServiceClient;
 
     @Mock
+    private LocalizationService localizationService;
+
+    @Mock
     private HttpSession session;
 
     @Mock
@@ -53,6 +57,19 @@ class AccountControllerTest {
             .build();
 
         when(session.getAttribute("username")).thenReturn("testuser");
+        lenient().when(localizationService.resolveMessage(any()))
+            .thenAnswer(invocation -> {
+                Object error = invocation.getArgument(0);
+                if (error instanceof org.springframework.validation.ObjectError objectError) {
+                    return objectError.getDefaultMessage();
+                }
+                return "";
+            });
+
+        lenient().when(localizationService.getMessage(eq("account.update.success"), any(Object[].class)))
+            .thenReturn("Account updated successfully");
+        lenient().when(localizationService.getMessage(eq("account.update.error"), any(Object[].class)))
+            .thenReturn("Failed to update account. Please try again.");
     }
 
     @Nested
@@ -246,6 +263,19 @@ class AccountControllerTest {
             // Given
             when(bindingResult.hasErrors()).thenReturn(false);
             when(session.getAttribute("username")).thenReturn("testuser");
+        lenient().when(localizationService.resolveMessage(any()))
+            .thenAnswer(invocation -> {
+                Object error = invocation.getArgument(0);
+                if (error instanceof org.springframework.validation.ObjectError objectError) {
+                    return objectError.getDefaultMessage();
+                }
+                return "";
+            });
+
+        lenient().when(localizationService.getMessage(eq("account.update.success"), any(Object[].class)))
+            .thenReturn("Account updated successfully");
+        lenient().when(localizationService.getMessage(eq("account.update.error"), any(Object[].class)))
+            .thenReturn("Failed to update account. Please try again.");
             doNothing().when(accountServiceClient).updateAccount(any());
 
             // When

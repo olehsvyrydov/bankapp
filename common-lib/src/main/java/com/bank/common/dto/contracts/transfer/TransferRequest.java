@@ -8,16 +8,16 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransferRequest {
-    @NotNull(message = "From bank account ID is required")
+    @NotNull(message = "{validation.transfer.from.required}")
     private Long fromBankAccountId;
 
     // Either toBankAccountId or recipientEmail must be provided
     private Long toBankAccountId;
 
-    @Email(message = "Invalid email format")
+    @Email(message = "{validation.email.invalid}")
     private String recipientEmail;
 
-    @NotNull(message = "Amount is required")
-    @Positive(message = "Amount must be positive")
+    @NotNull(message = "{validation.amount.required}")
+    @Positive(message = "{validation.amount.positive}")
     private Double amount;
 }

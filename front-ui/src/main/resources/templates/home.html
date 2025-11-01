@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html  lang="en"
+<html lang="en" th:attr="lang=${#locale.language}"
        xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
@@ -8,15 +8,12 @@
     <title th:text="#{app.name} + ' - ' + #{home.title}">Bank - Home</title>
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
-<body>
+<body th:attr="data-transfer-same-account=${#messages.msg('transfer.sameAccount')}, data-amount-positive=${#messages.msg('validation.amount.positive')}">
 <div class="container">
     <div class="header">
         <h1 th:text="#{app.welcome}">Welcome to Bank</h1>
         <div class="user-info">
-            <div class="language-selector">
-                <a th:href="@{''(lang='en')}" class="lang-link">EN</a> |
-                <a th:href="@{''(lang='ru')}" class="lang-link">RU</a>
-            </div>
+            <div th:replace="fragments/language-switch :: languageSelector"></div>
             <span th:text="${username}">Username</span>
             <a th:href="@{/logout}" class="btn btn-secondary" th:text="#{nav.logout}">Logout</a>
         </div>

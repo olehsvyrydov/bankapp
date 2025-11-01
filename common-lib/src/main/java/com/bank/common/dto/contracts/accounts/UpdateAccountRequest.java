@@ -19,20 +19,20 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class UpdateAccountRequest {
 
-    @NotBlank(message = "First name is required")
-    @Size(min = 2, max = 50, message = "First name must be between 2 and 50 characters")
+    @NotBlank(message = "{validation.firstName.required}")
+    @Size(min = 2, max = 50, message = "{validation.firstName.length}")
     private String firstName;
 
-    @NotBlank(message = "Last name is required")
-    @Size(min = 2, max = 50, message = "Last name must be between 2 and 50 characters")
+    @NotBlank(message = "{validation.lastName.required}")
+    @Size(min = 2, max = 50, message = "{validation.lastName.length}")
     private String lastName;
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Invalid email format")
+    @NotBlank(message = "{validation.email.required}")
+    @Email(message = "{validation.email.invalid}")
     private String email;
 
-    @NotNull(message = "Birth date is required")
-    @Past(message = "Birth date must be in the past")
-    @MinAge(value = 18, message = "Must be at least 18 years old")
+    @NotNull(message = "{validation.birthDate.required}")
+    @Past(message = "{validation.birthDate.past}")
+    @MinAge(value = 18, message = "{validation.minAge}")
     private LocalDate birthDate;
 }
