@@ -70,15 +70,15 @@ public class BankAccountController {
 
             // Extract the actual error message from JSON response
             String backendMessage = MessageHelper.extractReadable(e.getMessage());
-            String localizationKey = MessageHelper.getLocalizationKey(backendMessage);
+            String messageKey = MessageHelper.toMessageKey(backendMessage);
 
             String errorMessage = null;
-            if (localizationKey != null) {
-                // Try to use localized message if mapping exists
+            if (messageKey != null) {
+                // Try to use localized message if key exists
                 try {
-                    errorMessage = localizationService.getMessage(localizationKey);
+                    errorMessage = localizationService.getMessage(messageKey);
                 } catch (Exception ex) {
-                    log.debug("Failed to get localized message for key: {}", localizationKey);
+                    log.debug("No localized message found for key: {}", messageKey);
                 }
             }
 
@@ -131,15 +131,15 @@ public class BankAccountController {
 
             // Extract the actual error message from JSON response
             String backendMessage = MessageHelper.extractReadable(e.getMessage());
-            String localizationKey = MessageHelper.getLocalizationKey(backendMessage);
+            String messageKey = MessageHelper.toMessageKey(backendMessage);
 
             String errorMessage = null;
-            if (localizationKey != null) {
-                // Try to use localized message if mapping exists
+            if (messageKey != null) {
+                // Try to use localized message if key exists
                 try {
-                    errorMessage = localizationService.getMessage(localizationKey);
+                    errorMessage = localizationService.getMessage(messageKey);
                 } catch (Exception ex) {
-                    log.debug("Failed to get localized message for key: {}", localizationKey);
+                    log.debug("No localized message found for key: {}", messageKey);
                 }
             }
 

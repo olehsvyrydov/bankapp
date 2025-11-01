@@ -15,13 +15,6 @@ public class MessageHelper {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final List<String> CANDIDATE_KEYS = List.of("message", "error", "detail", "description", "reason");
 
-    // Map backend error messages to localization keys
-    private static final Map<String, String> ERROR_MESSAGE_MAPPING = Map.of(
-        "Cannot delete bank account with non-zero balance", "bankAccount.delete.nonZeroBalance",
-        "Insufficient balance", "bankAccount.insufficientBalance",
-        "Insufficient funds", "bankAccount.insufficientBalance"
-    );
-
     public static String pickUserMessage(String defaultMessage, String friendlyMessage, String rawMessage) {
         if (friendlyMessage != null && !friendlyMessage.isBlank() && !friendlyMessage.equals(defaultMessage)) {
             return friendlyMessage;
@@ -36,14 +29,32 @@ public class MessageHelper {
     }
 
     /**
-     * Extracts a localization key for the given backend error message.
-     * Returns null if no mapping exists.
+     * Converts a backend error message to a message key format.
+     * For example: "Cannot delete bank account with non-zero balance"
+     * becomes "error.backend.cannot.delete.bank.account.with.non.zero.balance"
+     *
+     * @param backendMessage the backend error message
+     * @return the message key, or null if the message is not suitable
      */
-    public static String getLocalizationKey(String backendMessage) {
+    public static String toMessageKey(String backendMessage) {
         if (backendMessage == null || backendMessage.isBlank()) {
             return null;
         }
-        return ERROR_MESSAGE_MAPPING.get(backendMessage.trim());
+
+        String trimmed = backendMessage.trim();
+
+        // Only convert short, user-friendly messages (not technical errors)
+        if (containsTechnicalDetails(trimmed) || trimmed.length() > 100) {
+            return null;
+        }
+
+        // Convert to message key format: error.backend.{normalized message}
+        String normalized = trimmed
+            .toLowerCase()
+            .replaceAll("[^a-z0-9\\s]", "") // Remove special characters
+            .replaceAll("\\s+", "."); // Replace spaces with dots
+
+        return "error.backend." + normalized;
     }
 
     public static String extractReadable(String rawMessage) {
