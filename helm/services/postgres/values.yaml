@@ -1,0 +1,82 @@
+image:
+  registry: docker.io
+  repository: bitnami/postgresql
+  tag: 16.4.0
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+auth:
+  username: bank_user
+  password: bank_password
+  database: bankdb
+  existingSecret: ""
+  secretKeys:
+    username: POSTGRES_USER
+    password: POSTGRES_PASSWORD
+    database: POSTGRES_DB
+
+service:
+  type: ClusterIP
+  port: 5432
+  annotations: {}
+
+persistence:
+  enabled: true
+  accessModes:
+    - ReadWriteOnce
+  size: 5Gi
+  storageClass: ""
+
+resources: {}
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  fsGroup: 1001
+
+securityContext:
+  runAsUser: 1001
+  runAsGroup: 1001
+  runAsNonRoot: true
+
+affinity: {}
+nodeSelector: {}
+tolerations: []
+
+primary:
+  replicaCount: 1
+  annotations: {}
+
+config:
+  parameters: {}
+  initdbScripts: {}
+  extraEnv: []
+
+metrics:
+  enabled: false
+  image: bitnami/postgres-exporter:0.15.0
+  annotations: {}
+  serviceMonitor:
+    enabled: false
+
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  failureThreshold: 6
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 15
+
+serviceAccount:
+  create: false
+  name: ""
+
+imagePullSecrets: []
+
+tests:
+  enabled: true
+  image: bitnami/postgresql:16.4.0

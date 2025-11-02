@@ -1,0 +1,12 @@
+{{- with .Values.config.configMap }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "auth-server.fullname" $ }}-config
+  labels:
+    {{- include "auth-server.labels" $ | nindent 4 }}
+data:
+{{- range $key, $value := . }}
+  {{ $key }}: {{ $value | quote }}
+{{- end }}
+{{- end }}

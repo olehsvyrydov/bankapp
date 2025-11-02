@@ -1,0 +1,51 @@
+apiVersion: v2
+name: bankapp
+description: Umbrella chart that deploys the Bank microservice platform and its dependencies.
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+dependencies:
+  - name: accounts
+    alias: accounts
+    version: 0.1.0
+    repository: "file://../services/accounts"
+  - name: auth-server
+    alias: authServer
+    version: 0.1.0
+    repository: "file://../services/auth-server"
+  - name: front-ui
+    alias: frontUi
+    version: 0.1.0
+    repository: "file://../services/front-ui"
+  - name: cash
+    alias: cash
+    version: 0.1.0
+    repository: "file://../services/cash"
+  - name: transfer
+    alias: transfer
+    version: 0.1.0
+    repository: "file://../services/transfer"
+  - name: exchange
+    alias: exchange
+    version: 0.1.0
+    repository: "file://../services/exchange"
+  - name: exchange-generator
+    alias: exchangeGenerator
+    version: 0.1.0
+    repository: "file://../services/exchange-generator"
+  - name: blocker
+    alias: blocker
+    version: 0.1.0
+    repository: "file://../services/blocker"
+  - name: notifications
+    alias: notifications
+    version: 0.1.0
+    repository: "file://../services/notifications"
+  - name: gateway
+    alias: gateway
+    version: 0.1.0
+    repository: "file://../services/gateway"
+  - name: postgres
+    alias: postgres
+    version: 0.1.0
+    repository: "file://../services/postgres"

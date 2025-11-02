@@ -1,0 +1,6 @@
+apiVersion: v2
+name: cash
+version: 0.1.0
+appVersion: "1.0.0"
+description: Placeholder chart for cash component of the Bank platform.
+type: application

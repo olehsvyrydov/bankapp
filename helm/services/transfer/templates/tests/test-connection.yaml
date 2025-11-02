@@ -1,0 +1,16 @@
+{{- if (default true .Values.tests.enabled) }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "transfer.fullname" . }}-test"
+  labels:
+    {{- include "transfer.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  restartPolicy: Never
+  containers:
+    - name: curl
+      image: {{ .Values.tests.image | default "curlimages/curl:8.10.1" }}
+      args: ['-f', 'http://{{ include "transfer.fullname" . }}:{{ .Values.service.port }}{{ .Values.tests.path | default "/actuator/health" }}']
+{{- end }}

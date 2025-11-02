@@ -25,50 +25,39 @@ spring:
         - PreserveHostHeader
       routes:
         - id: accounts-service
-          uri: lb://accounts-service
+          uri: http://accounts-service:8081
           predicates:
             - Path=/api/accounts/**
         - id: cash-service
-          uri: lb://cash-service
+          uri: http://cash-service:8082
           predicates:
             - Path=/api/cash/**
         - id: transfer-service
-          uri: lb://transfer-service
+          uri: http://transfer-service:8083
           predicates:
             - Path=/api/transfers/**
         - id: exchange-service
-          uri: lb://exchange-service
+          uri: http://exchange-service:8084
           predicates:
             - Path=/api/exchange/**
         - id: exchange-service-generator
-          uri: lb://exchange-generator-service
+          uri: http://exchange-generator-service:8085
           predicates:
             - Path=/api/exchange/generate/**
         - id: notifications-service
-          uri: lb://notifications-service
+          uri: http://notifications-service:8087
           predicates:
             - Path=/api/notifications/**
         - id: blocker-service
-          uri: lb://blocker-service
+          uri: http://blocker-service:8086
           predicates:
             - Path=/api/blocker/**
-      discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: true
       globalcors:
         cors-configurations:
           '[/**]':
             allowed-origins: "*"
             allowed-methods: "*"
             allowed-headers: "*"
-
-eureka:
-  client:
-    service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
-  instance:
-    prefer-ip-address: true
 
 management:
   endpoints:

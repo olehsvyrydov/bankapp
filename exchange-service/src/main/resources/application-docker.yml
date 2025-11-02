@@ -37,14 +37,6 @@ spring:
           exchange-service:
             token-uri: http://auth-server:9100/oauth2/token
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://eureka-server:8761/eureka/
-  instance:
-    prefer-ip-address: true
-    hostname: exchange-service
-
 security:
   internal-client:
     registration-id: exchange-service

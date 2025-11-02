@@ -1,0 +1,19 @@
+{{- if (default true .Values.tests.enabled) }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "postgres.fullname" . }}-test
+  labels:
+    {{- include "postgres.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  restartPolicy: Never
+  containers:
+    - name: pg-isready
+      image: {{ .Values.tests.image }}
+      command: ['/bin/sh', '-c']
+      args:
+        - |
+          pg_isready -h {{ include "postgres.fullname" . }} -p {{ .Values.service.port }}
+{{- end }}

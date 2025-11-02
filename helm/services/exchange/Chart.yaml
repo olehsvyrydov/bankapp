@@ -1,0 +1,6 @@
+apiVersion: v2
+name: exchange
+version: 0.1.0
+appVersion: "1.0.0"
+description: Placeholder chart for exchange component of the Bank platform.
+type: application

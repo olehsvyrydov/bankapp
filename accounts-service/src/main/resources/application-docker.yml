@@ -31,14 +31,6 @@ spring:
           accounts-service:
             token-uri: http://auth-server:9100/oauth2/token
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://eureka-server:8761/eureka/
-  instance:
-    prefer-ip-address: true
-    hostname: accounts-service
-
 security:
   internal-client:
     registration-id: accounts-service

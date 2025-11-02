@@ -15,8 +15,6 @@
 
     <modules>
         <module>common-lib</module>
-        <module>config-server</module>
-        <module>eureka-server</module>
         <module>gateway-service</module>
         <module>auth-server</module>
         <module>accounts-service</module>

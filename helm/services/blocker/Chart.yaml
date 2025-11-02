@@ -1,0 +1,6 @@
+apiVersion: v2
+name: blocker
+version: 0.1.0
+appVersion: "1.0.0"
+description: Placeholder chart for blocker component of the Bank platform.
+type: application

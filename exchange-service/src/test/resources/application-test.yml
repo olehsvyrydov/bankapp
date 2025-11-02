@@ -16,4 +16,3 @@ spring:
         jwt:
           issuer-uri: http://localhost
 logging.level.org.springframework: WARN
-EUREKA_CLIENT_ENABLED: false

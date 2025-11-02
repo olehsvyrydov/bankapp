@@ -4,8 +4,6 @@ server:
 spring:
   application:
     name: cash-service
-  config:
-    import: "optional:configserver:${CONFIG_SERVER_URL:http://config-server:8888}"
 
   datasource:
     driver-class-name: org.postgresql.Driver
@@ -54,13 +52,6 @@ spring:
       circuitbreaker:
         enabled: true
 
-eureka:
-  client:
-    service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://eureka-server:8761/eureka/}
-  instance:
-    prefer-ip-address: true
-
 security:
   internal-client:
     registration-id: cash-service
@@ -80,4 +71,3 @@ management:
     web:
       exposure:
         include: health,info
-

@@ -1,0 +1,58 @@
+{{- if .Values.database.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "notifications.fullname" . }}-db
+  labels:
+    {{- include "notifications.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "notifications.fullname" . }}-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "notifications.name" . }}-db
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "notifications.name" . }}-db
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: postgres
+          image: {{ include "notifications.databaseImage" . }}
+          ports:
+            - containerPort: {{ .Values.database.service.port }}
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.database.name | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.database.username | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.existingSecret | default (printf "%s-db" (include "notifications.fullname" .)) }}
+                  key: POSTGRES_PASSWORD
+          {{- with .Values.database.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          {{- with .Values.database.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.database.storage.size }}
+        {{- if .Values.database.storage.className }}
+        storageClassName: {{ .Values.database.storage.className }}
+        {{- end }}
+{{- end }}

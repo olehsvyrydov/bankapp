@@ -29,11 +29,6 @@ spring:
             connectTimeout: 5000
             readTimeout: 10000
 
-eureka:
-  client:
-    service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
-
 security:
   internal-client:
     registration-id: exchange-generator-service
@@ -47,4 +42,3 @@ management:
     web:
       exposure:
         include: health,info
-

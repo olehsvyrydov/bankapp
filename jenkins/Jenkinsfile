@@ -1,0 +1,164 @@
+def SERVICES = [
+  [chartKey: 'accounts', module: 'accounts-service', service: 'accounts-service', dockerfile: 'accounts-service/Dockerfile'],
+  [chartKey: 'authServer', module: 'auth-server', service: 'auth-server', dockerfile: 'auth-server/Dockerfile'],
+  [chartKey: 'frontUi', module: 'front-ui', service: 'front-ui', dockerfile: 'front-ui/Dockerfile'],
+  [chartKey: 'cash', module: 'cash-service', service: 'cash-service', dockerfile: 'cash-service/Dockerfile'],
+  [chartKey: 'transfer', module: 'transfer-service', service: 'transfer-service', dockerfile: 'transfer-service/Dockerfile'],
+  [chartKey: 'exchange', module: 'exchange-service', service: 'exchange-service', dockerfile: 'exchange-service/Dockerfile'],
+  [chartKey: 'exchangeGenerator', module: 'exchange-generator-service', service: 'exchange-generator-service', dockerfile: 'exchange-generator-service/Dockerfile'],
+  [chartKey: 'blocker', module: 'blocker-service', service: 'blocker-service', dockerfile: 'blocker-service/Dockerfile'],
+  [chartKey: 'notifications', module: 'notifications-service', service: 'notifications-service', dockerfile: 'notifications-service/Dockerfile'],
+  [chartKey: 'gateway', module: 'gateway-service', service: 'gateway-service', dockerfile: 'gateway-service/Dockerfile']
+]
+
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+  }
+
+  parameters {
+    string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Container image tag to build and deploy for all services')
+    string(name: 'DOCKER_REGISTRY', defaultValue: 'registry.example.com/bank', description: 'Docker registry root where images are pushed')
+    string(name: 'DOCKER_CREDENTIALS_ID', defaultValue: '', description: 'Jenkins credentials ID for the container registry')
+    string(name: 'KUBE_CONFIG_TEST', defaultValue: 'kubeconfig-test', description: 'Jenkins credentials ID with kubeconfig for the test cluster')
+    string(name: 'KUBE_CONFIG_PROD', defaultValue: 'kubeconfig-prod', description: 'Jenkins credentials ID with kubeconfig for the production cluster')
+    booleanParam(name: 'DEPLOY_TO_PROD', defaultValue: false, description: 'Deploy umbrella chart to production after approval')
+  }
+
+  environment {
+    CHART_DIR = 'helm/bankapp'
+    TEST_NAMESPACE = 'test'
+    PROD_NAMESPACE = 'prod'
+    TEST_RELEASE = 'bankapp-test'
+    PROD_RELEASE = 'bankapp-prod'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Prepare') {
+      steps {
+        script {
+          env.DOCKER_REGISTRY_PATH = params.DOCKER_REGISTRY
+          env.IMAGE_TAG = params.IMAGE_TAG
+        }
+      }
+    }
+
+    stage('Build & Test') {
+      steps {
+        sh 'mvn clean verify'
+      }
+    }
+
+    stage('Build & Push Images') {
+      steps {
+        script {
+          def buildAndPush = { svc ->
+            def imageRepo = "${env.DOCKER_REGISTRY_PATH}/${svc.service}"
+            def commands = """
+              docker build -t ${imageRepo}:${env.IMAGE_TAG} -f ${svc.dockerfile} .
+              docker push ${imageRepo}:${env.IMAGE_TAG}
+            """.stripIndent()
+            sh commands
+          }
+
+          if (params.DOCKER_CREDENTIALS_ID?.trim()) {
+            withCredentials([usernamePassword(credentialsId: params.DOCKER_CREDENTIALS_ID, usernameVariable: 'REG_USER', passwordVariable: 'REG_PASS')]) {
+              sh """
+                echo "$REG_PASS" | docker login $DOCKER_REGISTRY_PATH --username "$REG_USER" --password-stdin
+              """.stripIndent()
+              SERVICES.each { svc -> buildAndPush(svc) }
+            }
+          } else {
+            SERVICES.each { svc -> buildAndPush(svc) }
+          }
+        }
+      }
+    }
+
+    stage('Helm Lint') {
+      steps {
+        sh """
+          helm dependency update ${CHART_DIR}
+          helm lint ${CHART_DIR}
+        """
+      }
+    }
+
+    stage('Deploy to Test') {
+      steps {
+        script {
+          def overrides = SERVICES.collect { svc ->
+            def imageRepo = "${env.DOCKER_REGISTRY_PATH}/${svc.service}"
+            "--set ${svc.chartKey}.image.repository=${imageRepo} --set ${svc.chartKey}.image.tag=${env.IMAGE_TAG}"
+          }.join(' \\ \n  ')
+          env.HELM_IMAGE_OVERRIDES = overrides
+        }
+        withCredentials([kubeconfigFile(credentialsId: params.KUBE_CONFIG_TEST, variable: 'KUBECONFIG')]) {
+          sh """
+            kubectl create namespace ${TEST_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+            helm upgrade --install ${TEST_RELEASE} ${CHART_DIR} \
+              --namespace ${TEST_NAMESPACE} \
+              -f helm/environments/test.yaml \
+              --atomic --cleanup-on-fail \
+              ${HELM_IMAGE_OVERRIDES}
+            helm test ${TEST_RELEASE} --namespace ${TEST_NAMESPACE}
+          """
+        }
+      }
+    }
+
+    stage('Prod Approval') {
+      when { expression { params.DEPLOY_TO_PROD } }
+      steps {
+        timeout(time: 2, unit: 'HOURS') {
+          input message: 'Deploy umbrella chart to production?', ok: 'Deploy'
+        }
+      }
+    }
+
+    stage('Deploy to Prod') {
+      when { expression { params.DEPLOY_TO_PROD } }
+      steps {
+        script {
+          def overrides = SERVICES.collect { svc ->
+            def imageRepo = "${env.DOCKER_REGISTRY_PATH}/${svc.service}"
+            "--set ${svc.chartKey}.image.repository=${imageRepo} --set ${svc.chartKey}.image.tag=${env.IMAGE_TAG}"
+          }.join(' \\ \n  ')
+          env.HELM_IMAGE_OVERRIDES = overrides
+        }
+        withCredentials([kubeconfigFile(credentialsId: params.KUBE_CONFIG_PROD, variable: 'KUBECONFIG')]) {
+          sh """
+            kubectl create namespace ${PROD_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+            helm upgrade --install ${PROD_RELEASE} ${CHART_DIR} \
+              --namespace ${PROD_NAMESPACE} \
+              -f helm/environments/prod.yaml \
+              --atomic --cleanup-on-fail \
+              ${HELM_IMAGE_OVERRIDES}
+            helm test ${PROD_RELEASE} --namespace ${PROD_NAMESPACE}
+          """
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo 'Umbrella deployment pipeline completed successfully.'
+    }
+    failure {
+      echo 'Umbrella deployment pipeline failed.'
+    }
+    always {
+      sh 'docker logout $DOCKER_REGISTRY_PATH || true'
+    }
+  }
+}

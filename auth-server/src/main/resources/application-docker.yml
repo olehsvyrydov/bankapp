@@ -34,11 +34,6 @@ jwt:
   access-token-validity: 3600
   refresh-token-validity: 604800
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://eureka-server:8761/eureka/
-
 logging:
   level:
     root: INFO

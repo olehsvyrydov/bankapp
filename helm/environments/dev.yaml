@@ -1,0 +1,8 @@
+global:
+  namespace: dev
+  ingress:
+    host: bank.local
+
+frontUi:
+  ingress:
+    host: bank.local

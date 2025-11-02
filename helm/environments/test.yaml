@@ -1,0 +1,14 @@
+global:
+  namespace: test
+  ingress:
+    host: test.bank.local
+
+authServer:
+  image:
+    tag: test
+
+frontUi:
+  ingress:
+    host: test.bank.local
+  image:
+    tag: test

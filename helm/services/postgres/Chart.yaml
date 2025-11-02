@@ -1,0 +1,6 @@
+apiVersion: v2
+name: postgres
+version: 0.1.0
+appVersion: "16"
+description: Stateful PostgreSQL database instance for the Bank platform.
+type: application

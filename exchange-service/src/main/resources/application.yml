@@ -4,8 +4,6 @@ server:
 spring:
   application:
     name: exchange-service
-  config:
-    import: optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}
 
   datasource:
     driver-class-name: org.postgresql.Driver
@@ -54,11 +52,6 @@ spring:
       circuitbreaker:
         enabled: true
 
-eureka:
-  client:
-    service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
-
 security:
   internal-client:
     registration-id: exchange-service
@@ -68,4 +61,3 @@ management:
     web:
       exposure:
         include: health,info
-

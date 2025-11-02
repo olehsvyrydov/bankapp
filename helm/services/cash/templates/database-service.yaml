@@ -1,0 +1,21 @@
+{{- if .Values.database.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cash.fullname" . }}-db
+  labels:
+    {{- include "cash.labels" . | nindent 4 }}
+  {{- with .Values.database.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: postgres
+      port: {{ .Values.database.service.port }}
+      targetPort: postgres
+  selector:
+    app.kubernetes.io/name: {{ include "cash.name" . }}-db
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

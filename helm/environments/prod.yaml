@@ -1,0 +1,26 @@
+global:
+  namespace: prod
+  ingress:
+    host: bank.example.com
+    tls:
+      enabled: true
+      secretName: bank-tls
+
+accounts:
+  replicaCount: 2
+  image:
+    tag: prod
+
+authServer:
+  image:
+    tag: prod
+
+frontUi:
+  ingress:
+    host: bank.example.com
+  image:
+    tag: prod
+
+notifications:
+  image:
+    tag: prod

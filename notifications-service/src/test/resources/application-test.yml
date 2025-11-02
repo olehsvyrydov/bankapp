@@ -19,4 +19,3 @@ spring:
       circuitbreaker:
         enabled: false
 logging.level.org.springframework: WARN
-EUREKA_CLIENT_ENABLED: false

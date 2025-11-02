@@ -1,0 +1,98 @@
+image:
+  registry: docker.io
+  repository: bank/exchange
+  tag: latest
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+imagePullSecrets: []
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+  nodePort: null
+  annotations: {}
+  additionalPorts: []
+
+resources: {}
+
+env: {}
+
+ingress:
+  enabled: false
+  className: ""
+  host: ""
+  path: /
+  annotations: {}
+  tls:
+    enabled: false
+    secretName: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 1
+  targetCPUUtilizationPercentage: 80
+
+replicaCount: 1
+
+tolerations: []
+
+nodeSelector: {}
+
+affinity: {}
+
+config:
+  extraEnv: []
+  configMap: {}
+  secret: {}
+
+livenessProbe:
+  enabled: true
+  path: /actuator/health/liveness
+  port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 15
+
+readinessProbe:
+  enabled: true
+  path: /actuator/health/readiness
+  port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 15
+
+database:
+  enabled: false
+  name: appdb
+  username: app_user
+  password: app_password
+  existingSecret: ""
+  service:
+    port: 5432
+  storage:
+    size: 1Gi
+    className: ""
+  image:
+    registry: docker.io
+    repository: bitnami/postgresql
+    tag: 16.4.0
+  resources: {}
+  annotations: {}
+  extraEnv: []
+
+tests:
+  enabled: true
+  image: curlimages/curl:8.10.1
+  path: /actuator/health

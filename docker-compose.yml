@@ -19,47 +19,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Eureka Service Discovery
-  eureka-server:
-    build:
-      context: ./eureka-server
-      dockerfile: Dockerfile
-    container_name: bank-eureka
-    ports:
-      - "8761:8761"
-    networks:
-      - bank-network
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8761/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
-  # Config Server
-  config-server:
-    build:
-      context: ./config-server
-      dockerfile: Dockerfile
-    container_name: bank-config
-    ports:
-      - "8888:8888"
-    depends_on:
-      eureka-server:
-        condition: service_healthy
-    environment:
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      SPRING_PROFILES_ACTIVE: native
-      SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS: file:/config
-    volumes:
-      - ./config-server/src/main/resources/config:/config
-    networks:
-      - bank-network
-    healthcheck:
-      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8888/actuator/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
   # Gateway Service
   gateway-service:
     build:
@@ -69,15 +28,8 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      eureka-server:
+      auth-server:
         condition: service_healthy
-      config-server:
-        condition: service_healthy
-    environment:
-      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
-      CONFIG_SERVER_URL: http://config-server:8888
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
     networks:
       - bank-network
     healthcheck:
@@ -98,14 +50,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      eureka-server:
-        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bankdb
       SPRING_DATASOURCE_USERNAME: bank_user
       SPRING_DATASOURCE_PASSWORD: bank_password
-      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
     networks:
       - bank-network
     healthcheck:
@@ -126,20 +75,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      eureka-server:
-        condition: service_healthy
-      config-server:
-        condition: service_healthy
       auth-server:
         condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bankdb
       SPRING_DATASOURCE_USERNAME: bank_user
       SPRING_DATASOURCE_PASSWORD: bank_password
-      CONFIG_SERVER_URL: http://config-server:8888
-      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://auth-server:9100
       SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_BANK_CLIENT_TOKEN_URI: http://auth-server:9100/oauth2/token
       SPRING_PROFILES_ACTIVE: docker
@@ -163,20 +104,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      eureka-server:
-        condition: service_healthy
-      config-server:
-        condition: service_healthy
       auth-server:
         condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bankdb
       SPRING_DATASOURCE_USERNAME: bank_user
       SPRING_DATASOURCE_PASSWORD: bank_password
-      CONFIG_SERVER_URL: http://config-server:8888
-      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://auth-server:9100
       SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_BANK_CLIENT_TOKEN_URI: http://auth-server:9100/oauth2/token
       SPRING_PROFILES_ACTIVE: docker
@@ -200,20 +133,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      eureka-server:
-        condition: service_healthy
-      config-server:
-        condition: service_healthy
       auth-server:
         condition: service_healthy
+      accounts-service:
+        condition: service_started
+      exchange-service:
+        condition: service_started
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bankdb
       SPRING_DATASOURCE_USERNAME: bank_user
       SPRING_DATASOURCE_PASSWORD: bank_password
-      CONFIG_SERVER_URL: http://config-server:8888
-      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://auth-server:9100
       SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_BANK_CLIENT_TOKEN_URI: http://auth-server:9100/oauth2/token
       SPRING_PROFILES_ACTIVE: docker
@@ -237,20 +166,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      eureka-server:
-        condition: service_healthy
-      config-server:
-        condition: service_healthy
       auth-server:
         condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bankdb
       SPRING_DATASOURCE_USERNAME: bank_user
       SPRING_DATASOURCE_PASSWORD: bank_password
-      CONFIG_SERVER_URL: http://config-server:8888
-      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://auth-server:9100
       SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_BANK_CLIENT_TOKEN_URI: http://auth-server:9100/oauth2/token
       SPRING_PROFILES_ACTIVE: docker
@@ -272,15 +193,11 @@ services:
     ports:
       - "8085:8085"
     depends_on:
-      eureka-server:
-        condition: service_healthy
       auth-server:
         condition: service_healthy
       exchange-service:
         condition: service_healthy
     environment:
-      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://auth-server:9100
       SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_BANK_CLIENT_TOKEN_URI: http://auth-server:9100/oauth2/token
       SPRING_PROFILES_ACTIVE: docker
@@ -302,17 +219,9 @@ services:
     ports:
       - "8086:8086"
     depends_on:
-      eureka-server:
-        condition: service_healthy
-      config-server:
-        condition: service_healthy
       auth-server:
         condition: service_healthy
     environment:
-      CONFIG_SERVER_URL: http://config-server:8888
-      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://auth-server:9100
       SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_BANK_CLIENT_TOKEN_URI: http://auth-server:9100/oauth2/token
       SPRING_PROFILES_ACTIVE: docker
@@ -336,20 +245,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      eureka-server:
-        condition: service_healthy
-      config-server:
-        condition: service_healthy
       auth-server:
         condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bankdb
       SPRING_DATASOURCE_USERNAME: bank_user
       SPRING_DATASOURCE_PASSWORD: bank_password
-      CONFIG_SERVER_URL: http://config-server:8888
-      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://auth-server:9100
       SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_BANK_CLIENT_TOKEN_URI: http://auth-server:9100/oauth2/token
       SPRING_PROFILES_ACTIVE: docker
@@ -371,28 +272,25 @@ services:
     ports:
       - "8090:8090"
     depends_on:
-      eureka-server:
-        condition: service_healthy
       gateway-service:
         condition: service_healthy
       auth-server:
         condition: service_healthy
       accounts-service:
-        condition: service_healthy
+        condition: service_started
       transfer-service:
-        condition: service_healthy
+        condition: service_started
       cash-service:
-        condition: service_healthy
+        condition: service_started
       exchange-service:
-        condition: service_healthy
+        condition: service_started
       exchange-generator-service:
-        condition: service_healthy
+        condition: service_started
       notifications-service:
-        condition: service_healthy
+        condition: service_started
     environment:
       SPRING_PROFILES_ACTIVE: docker
       AUTH_SERVER_URL: http://auth-server:9100
-      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
     networks:
       - bank-network
     healthcheck:

@@ -45,13 +45,6 @@ clients:
   gateway-service:
     url: http://gateway-service:8080
 
-eureka:
-  client:
-    service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://eureka-server:8761/eureka/}
-  instance:
-    prefer-ip-address: true
-
 management:
   endpoints:
     web:

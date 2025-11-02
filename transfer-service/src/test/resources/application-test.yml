@@ -19,6 +19,5 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: http://localhost
-EUREKA_CLIENT_ENABLED: false
 spring.cloud.openfeign.circuitbreaker.enabled: false
 logging.level.org.springframework: WARN

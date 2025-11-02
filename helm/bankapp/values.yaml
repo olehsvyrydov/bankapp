@@ -1,0 +1,275 @@
+global:
+  imageRegistry: ''
+  imagePullSecrets: []
+  namespace: dev
+  ingress:
+    enabled: true
+    className: nginx
+    host: bank.local
+    tls:
+      enabled: false
+      secretName: ''
+  database:
+    storageClass: ''
+    volumeSize: 2Gi
+    image:
+      registry: docker.io
+      repository: bitnami/postgresql
+      tag: 16.4.0
+  config:
+    commonLabels: {}
+accounts:
+  fullnameOverride: accounts-service
+  image:
+    repository: bank/accounts-service
+    tag: latest
+  service:
+    port: 8081
+    targetPort: 8081
+  livenessProbe:
+    path: /actuator/health
+    port: 8081
+  readinessProbe:
+    path: /actuator/health
+    port: 8081
+  config:
+    configMap:
+      SPRING_PROFILES_ACTIVE: kubernetes
+      SPRING_DATASOURCE_URL: jdbc:postgresql://accounts-service-db:5432/accountsdb
+      SPRING_DATASOURCE_USERNAME: accounts_user
+      SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: accounts
+      SPRING_FLYWAY_SCHEMAS: accounts
+    secret:
+      SPRING_DATASOURCE_PASSWORD: accounts_password
+  database:
+    enabled: true
+    name: accountsdb
+    username: accounts_user
+    password: accounts_password
+    storage:
+      size: 2Gi
+authServer:
+  fullnameOverride: auth-server
+  image:
+    repository: bank/auth-server
+    tag: latest
+  service:
+    port: 9100
+    targetPort: 9100
+  livenessProbe:
+    path: /actuator/health
+    port: 9100
+  readinessProbe:
+    path: /actuator/health
+    port: 9100
+  config:
+    configMap:
+      SPRING_PROFILES_ACTIVE: kubernetes
+      SPRING_DATASOURCE_URL: jdbc:postgresql://auth-server-db:5432/authdb?currentSchema=auth
+      SPRING_DATASOURCE_USERNAME: auth_user
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    secret:
+      SPRING_DATASOURCE_PASSWORD: auth_password
+  database:
+    enabled: true
+    name: authdb
+    username: auth_user
+    password: auth_password
+    storage:
+      size: 2Gi
+frontUi:
+  fullnameOverride: front-ui
+  image:
+    repository: bank/front-ui
+    tag: latest
+  service:
+    port: 8090
+    targetPort: 8090
+  ingress:
+    enabled: true
+    className: nginx
+    host: bank.local
+    path: /
+  livenessProbe:
+    path: /actuator/health
+    port: 8090
+  readinessProbe:
+    path: /actuator/health
+    port: 8090
+  config:
+    configMap:
+      SPRING_PROFILES_ACTIVE: kubernetes
+cash:
+  fullnameOverride: cash-service
+  image:
+    repository: bank/cash-service
+    tag: latest
+  service:
+    port: 8082
+    targetPort: 8082
+  livenessProbe:
+    path: /actuator/health
+    port: 8082
+  readinessProbe:
+    path: /actuator/health
+    port: 8082
+  config:
+    configMap:
+      SPRING_PROFILES_ACTIVE: kubernetes
+      SPRING_DATASOURCE_URL: jdbc:postgresql://cash-service-db:5432/cashdb
+      SPRING_DATASOURCE_USERNAME: cash_user
+    secret:
+      SPRING_DATASOURCE_PASSWORD: cash_password
+  database:
+    enabled: true
+    name: cashdb
+    username: cash_user
+    password: cash_password
+    storage:
+      size: 2Gi
+transfer:
+  fullnameOverride: transfer-service
+  image:
+    repository: bank/transfer-service
+    tag: latest
+  service:
+    port: 8083
+    targetPort: 8083
+  livenessProbe:
+    path: /actuator/health
+    port: 8083
+  readinessProbe:
+    path: /actuator/health
+    port: 8083
+  config:
+    configMap:
+      SPRING_PROFILES_ACTIVE: kubernetes
+      SPRING_DATASOURCE_URL: jdbc:postgresql://transfer-service-db:5432/transferdb
+      SPRING_DATASOURCE_USERNAME: transfer_user
+    secret:
+      SPRING_DATASOURCE_PASSWORD: transfer_password
+  database:
+    enabled: true
+    name: transferdb
+    username: transfer_user
+    password: transfer_password
+    storage:
+      size: 2Gi
+exchange:
+  fullnameOverride: exchange-service
+  image:
+    repository: bank/exchange-service
+    tag: latest
+  service:
+    port: 8084
+    targetPort: 8084
+  livenessProbe:
+    path: /actuator/health
+    port: 8084
+  readinessProbe:
+    path: /actuator/health
+    port: 8084
+  config:
+    configMap:
+      SPRING_PROFILES_ACTIVE: kubernetes
+      SPRING_DATASOURCE_URL: jdbc:postgresql://exchange-service-db:5432/exchangedb
+      SPRING_DATASOURCE_USERNAME: exchange_user
+    secret:
+      SPRING_DATASOURCE_PASSWORD: exchange_password
+  database:
+    enabled: true
+    name: exchangedb
+    username: exchange_user
+    password: exchange_password
+    storage:
+      size: 2Gi
+exchangeGenerator:
+  fullnameOverride: exchange-generator-service
+  image:
+    repository: bank/exchange-generator-service
+    tag: latest
+  service:
+    port: 8085
+    targetPort: 8085
+  livenessProbe:
+    path: /actuator/health
+    port: 8085
+  readinessProbe:
+    path: /actuator/health
+    port: 8085
+  config:
+    configMap:
+      SPRING_PROFILES_ACTIVE: kubernetes
+blocker:
+  fullnameOverride: blocker-service
+  image:
+    repository: bank/blocker-service
+    tag: latest
+  service:
+    port: 8086
+    targetPort: 8086
+  livenessProbe:
+    path: /actuator/health
+    port: 8086
+  readinessProbe:
+    path: /actuator/health
+    port: 8086
+  config:
+    configMap:
+      SPRING_PROFILES_ACTIVE: kubernetes
+notifications:
+  fullnameOverride: notifications-service
+  image:
+    repository: bank/notifications-service
+    tag: latest
+  service:
+    port: 8087
+    targetPort: 8087
+  livenessProbe:
+    path: /actuator/health
+    port: 8087
+  readinessProbe:
+    path: /actuator/health
+    port: 8087
+  config:
+    configMap:
+      SPRING_PROFILES_ACTIVE: kubernetes
+      SPRING_DATASOURCE_URL: jdbc:postgresql://notifications-service-db:5432/notificationsdb
+      SPRING_DATASOURCE_USERNAME: notifications_user
+      SPRING_MAIL_HOST: smtp.example.com
+      SPRING_MAIL_USERNAME: notifications@example.com
+    secret:
+      SPRING_DATASOURCE_PASSWORD: notifications_password
+      SPRING_MAIL_PASSWORD: changeit
+  database:
+    enabled: true
+    name: notificationsdb
+    username: notifications_user
+    password: notifications_password
+    storage:
+      size: 2Gi
+gateway:
+  fullnameOverride: gateway-service
+  image:
+    repository: bank/gateway-service
+    tag: latest
+  service:
+    port: 8080
+    targetPort: 8080
+  livenessProbe:
+    path: /actuator/health
+    port: 8080
+  readinessProbe:
+    path: /actuator/health
+    port: 8080
+postgres:
+  fullnameOverride: postgres-shared
+  image:
+    repository: bitnami/postgresql
+    tag: 16.4.0
+  auth:
+    username: bank_user
+    password: bank_password
+    database: bank_shared
+  persistence:
+    size: 5Gi
