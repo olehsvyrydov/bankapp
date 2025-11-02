@@ -31,7 +31,7 @@ class OAuth2TokenIntegrationTest {
 
     @Test
     void shouldGetTokenWithClientCredentials() throws Exception {
-        // Create Basic Auth header
+        // Basic Auth header
         String credentials = "gateway-service:gateway-secret";
         String encodedCredentials = Base64.getEncoder().encodeToString(credentials.getBytes());
 

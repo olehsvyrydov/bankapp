@@ -6,8 +6,6 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.util.Base64URL;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,12 +13,9 @@ import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
-import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
@@ -42,15 +37,12 @@ import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 @Configuration
 public class AuthorizationServerConfig {
-
-//    private static final Logger log = LoggerFactory.getLogger(AuthorizationServerConfig.class);
-//    private static final String AUTH_SCHEMA = "auth";
 
     private final String issuer;
 
@@ -91,8 +83,6 @@ public class AuthorizationServerConfig {
     public RegisteredClientRepository registeredClientRepository(
         JdbcTemplate jdbcTemplate,
         PasswordEncoder passwordEncoder) {
-
-//        ensureAuthorizationServerTables(jdbcTemplate);
 
         JdbcRegisteredClientRepository repository = new JdbcRegisteredClientRepository(jdbcTemplate);
 
@@ -210,7 +200,6 @@ public class AuthorizationServerConfig {
         JdbcTemplate jdbcTemplate,
         RegisteredClientRepository registeredClientRepository) {
 
-//        ensureAuthorizationServerTables(jdbcTemplate);
         return new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
     }
 
@@ -219,7 +208,6 @@ public class AuthorizationServerConfig {
         JdbcTemplate jdbcTemplate,
         RegisteredClientRepository registeredClientRepository) {
 
-//        ensureAuthorizationServerTables(jdbcTemplate);
         return new JdbcOAuth2AuthorizationConsentService(jdbcTemplate, registeredClientRepository);
     }
 
@@ -263,7 +251,7 @@ public class AuthorizationServerConfig {
             .clientSecret(passwordEncoder.encode(rawSecret))
             .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
             .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-            .scopes(existing -> Stream.of(scopes).forEach(existing::add))
+            .scopes(existing -> existing.addAll(Arrays.asList(scopes)))
             .tokenSettings(tokenSettingsBuilder.build())
             .clientSettings(clientSettings);
 
@@ -301,7 +289,7 @@ public class AuthorizationServerConfig {
             .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-            .scopes(existing -> Stream.of(scopes).forEach(existing::add))
+            .scopes(existing -> existing.addAll(Arrays.asList(scopes)))
             .tokenSettings(tokenSettings)
             .clientSettings(clientSettings);
 
@@ -329,27 +317,27 @@ public class AuthorizationServerConfig {
 
         builder.clientAuthenticationMethods(methods -> {
             methods.clear();
-            desiredClient.getClientAuthenticationMethods().forEach(methods::add);
+            methods.addAll(desiredClient.getClientAuthenticationMethods());
         });
 
         builder.authorizationGrantTypes(grantTypes -> {
             grantTypes.clear();
-            desiredClient.getAuthorizationGrantTypes().forEach(grantTypes::add);
+            grantTypes.addAll(desiredClient.getAuthorizationGrantTypes());
         });
 
         builder.scopes(scopes -> {
             scopes.clear();
-            desiredClient.getScopes().forEach(scopes::add);
+            scopes.addAll(desiredClient.getScopes());
         });
 
         builder.redirectUris(uris -> {
             uris.clear();
-            desiredClient.getRedirectUris().forEach(uris::add);
+            uris.addAll(desiredClient.getRedirectUris());
         });
 
         builder.postLogoutRedirectUris(uris -> {
             uris.clear();
-            desiredClient.getPostLogoutRedirectUris().forEach(uris::add);
+            uris.addAll(desiredClient.getPostLogoutRedirectUris());
         });
 
         repository.save(builder.build());
@@ -364,85 +352,4 @@ public class AuthorizationServerConfig {
             throw new IllegalStateException("Failed to generate RSA key pair", ex);
         }
     }
-
-//    private void ensureAuthorizationServerTables(JdbcTemplate jdbcTemplate) {
-//        try {
-//            jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS " + AUTH_SCHEMA);
-//            jdbcTemplate.execute("SET search_path TO " + AUTH_SCHEMA);
-//
-//            jdbcTemplate.execute("""
-//                CREATE TABLE IF NOT EXISTS auth.oauth2_registered_client (
-//                    id VARCHAR(100) PRIMARY KEY,
-//                    client_id VARCHAR(100) NOT NULL,
-//                    client_id_issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-//                    client_secret VARCHAR(200) DEFAULT NULL,
-//                    client_secret_expires_at TIMESTAMP DEFAULT NULL,
-//                    client_name VARCHAR(200) NOT NULL,
-//                    client_authentication_methods VARCHAR(1000) NOT NULL,
-//                    authorization_grant_types VARCHAR(1000) NOT NULL,
-//                    redirect_uris VARCHAR(1000) DEFAULT NULL,
-//                    post_logout_redirect_uris VARCHAR(1000) DEFAULT NULL,
-//                    scopes VARCHAR(1000) NOT NULL,
-//                    client_settings VARCHAR(2000) NOT NULL,
-//                    token_settings VARCHAR(2000) NOT NULL
-//                )
-//            """);
-//
-//            jdbcTemplate.execute("""
-//                CREATE UNIQUE INDEX IF NOT EXISTS oauth2_registered_client_client_id_idx
-//                    ON auth.oauth2_registered_client (client_id)
-//            """);
-//
-//            jdbcTemplate.execute("""
-//                CREATE TABLE IF NOT EXISTS auth.oauth2_authorization (
-//                    id VARCHAR(100) PRIMARY KEY,
-//                    registered_client_id VARCHAR(100) NOT NULL,
-//                    principal_name VARCHAR(200) NOT NULL,
-//                    authorization_grant_type VARCHAR(100) NOT NULL,
-//                    authorized_scopes VARCHAR(1000) DEFAULT NULL,
-//                    attributes TEXT DEFAULT NULL,
-//                    state VARCHAR(500) DEFAULT NULL,
-//                    authorization_code_value BYTEA DEFAULT NULL,
-//                    authorization_code_issued_at TIMESTAMP DEFAULT NULL,
-//                    authorization_code_expires_at TIMESTAMP DEFAULT NULL,
-//                    authorization_code_metadata TEXT DEFAULT NULL,
-//                    access_token_value BYTEA DEFAULT NULL,
-//                    access_token_issued_at TIMESTAMP DEFAULT NULL,
-//                    access_token_expires_at TIMESTAMP DEFAULT NULL,
-//                    access_token_metadata TEXT DEFAULT NULL,
-//                    access_token_type VARCHAR(100) DEFAULT NULL,
-//                    access_token_scopes VARCHAR(1000) DEFAULT NULL,
-//                    refresh_token_value BYTEA DEFAULT NULL,
-//                    refresh_token_issued_at TIMESTAMP DEFAULT NULL,
-//                    refresh_token_expires_at TIMESTAMP DEFAULT NULL,
-//                    refresh_token_metadata TEXT DEFAULT NULL,
-//                    oidc_id_token_value BYTEA DEFAULT NULL,
-//                    oidc_id_token_issued_at TIMESTAMP DEFAULT NULL,
-//                    oidc_id_token_expires_at TIMESTAMP DEFAULT NULL,
-//                    oidc_id_token_metadata TEXT DEFAULT NULL,
-//                    oidc_id_token_claims TEXT DEFAULT NULL,
-//                    user_code_value BYTEA DEFAULT NULL,
-//                    user_code_issued_at TIMESTAMP DEFAULT NULL,
-//                    user_code_expires_at TIMESTAMP DEFAULT NULL,
-//                    user_code_metadata TEXT DEFAULT NULL,
-//                    device_code_value BYTEA DEFAULT NULL,
-//                    device_code_issued_at TIMESTAMP DEFAULT NULL,
-//                    device_code_expires_at TIMESTAMP DEFAULT NULL,
-//                    device_code_metadata TEXT DEFAULT NULL
-//                )
-//            """);
-//
-//            jdbcTemplate.execute("""
-//                CREATE TABLE IF NOT EXISTS auth.oauth2_authorization_consent (
-//                    registered_client_id VARCHAR(100) NOT NULL,
-//                    principal_name VARCHAR(200) NOT NULL,
-//                    authorities VARCHAR(1000) NOT NULL,
-//                    PRIMARY KEY (registered_client_id, principal_name)
-//                )
-//            """);
-//
-//        } catch (Exception ex) {
-//            log.warn("Failed to ensure OAuth2 tables exist before initialization: {}", ex.getMessage());
-//        }
-//    }
 }

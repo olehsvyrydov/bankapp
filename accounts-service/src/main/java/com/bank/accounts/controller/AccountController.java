@@ -113,8 +113,8 @@ public class AccountController {
 
     private String resolveUsername() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || auth instanceof AnonymousAuthenticationToken) {
-            log.warn("resolveUsername: authentication missing or anonymous. Authentication={}", auth);
+        if (auth instanceof AnonymousAuthenticationToken token) {
+            log.warn("resolveUsername: authentication missing or anonymous. Authentication={}", token);
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not authenticated");
         }
         log.debug("resolveUsername: authenticated user={}, type={}",

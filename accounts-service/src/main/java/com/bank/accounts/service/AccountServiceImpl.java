@@ -35,7 +35,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AccountDTO createAccount(CreateAccountRequest request) {
-        // Check if username already exists
+
         if (accountRepository.existsByUsername(request.getUsername())) {
             throw new BusinessException("Username already exists");
         }
