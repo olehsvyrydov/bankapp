@@ -3,7 +3,6 @@ package com.bank.frontend.util;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
-import java.util.Map;
 import lombok.experimental.UtilityClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,12 +122,12 @@ public class MessageHelper {
                         if (validationErrors != null && validationErrors.isObject()) {
                             StringBuilder errors = new StringBuilder();
                             validationErrors.fields().forEachRemaining(entry -> {
-                                if (errors.length() > 0) {
+                                if (!errors.isEmpty()) {
                                     errors.append(", ");
                                 }
                                 errors.append(entry.getValue().asText());
                             });
-                            return errors.length() > 0 ? errors.toString() : null;
+                            return !errors.isEmpty() ? errors.toString() : null;
                         }
                     }
                 } catch (Exception ex) {

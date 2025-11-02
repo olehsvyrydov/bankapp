@@ -1,5 +1,6 @@
 package com.bank.cash;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
@@ -12,6 +13,7 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 @SpringBootApplication(scanBasePackages = {"com.bank.cash", "com.bank.common"})
 @EnableDiscoveryClient
 @EnableFeignClients
+@Slf4j
 public class CashApplication {
     public static void main(String[] args) {
         SpringApplication.run(CashApplication.class, args);
@@ -22,9 +24,9 @@ public class CashApplication {
         return args -> {
             ClientRegistration registration = repository.findByRegistrationId("cash-service");
             if (registration == null) {
-                System.out.println("WARN: Client registration 'cash-service' not found");
+                log.warn("Client registration 'cash-service' not found");
             } else {
-                System.out.println("INFO: Loaded client registration 'cash-service' with scopes " + registration.getScopes());
+                log.info("Loaded client registration 'cash-service' with scopes {}", registration.getScopes());
             }
         };
     }

@@ -9,7 +9,6 @@ import com.bank.accounts.repository.BankAccountRepository;
 import com.bank.common.dto.contracts.accounts.*;
 import com.bank.common.dto.contracts.notifications.NotificationRequest;
 import com.bank.common.exception.BusinessException;
-import com.bank.common.util.ValidationUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -87,8 +86,6 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AccountDTO updateAccount(String username, UpdateAccountRequest request) {
-        ValidationUtils.validateAge(request.getBirthDate(), 18);
-
         Account account = accountRepository.findByUsername(username)
             .orElseThrow(() -> new BusinessException("Account not found"));
 

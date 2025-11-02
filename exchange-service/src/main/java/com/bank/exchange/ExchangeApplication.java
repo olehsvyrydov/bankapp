@@ -7,7 +7,8 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 @SpringBootApplication(scanBasePackages = {"com.bank.exchange", "com.bank.common"})
 @EnableDiscoveryClient
 public class ExchangeApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(ExchangeApplication.class, args);
-    }
+
+  public static void main(String[] args) {
+    SpringApplication.run(ExchangeApplication.class, args);
+  }
 }

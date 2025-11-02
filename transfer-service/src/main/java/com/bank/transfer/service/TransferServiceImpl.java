@@ -240,7 +240,7 @@ public class TransferServiceImpl implements TransferService {
     }
 
     private String resolveFeignMessage(String defaultMessage, FeignException ex) {
-        if (ex.content() != null) {
+        if (ex.responseBody().isPresent()) {
             try {
                 JsonNode node = OBJECT_MAPPER.readTree(ex.contentUTF8());
                 if (node.has("message")) {

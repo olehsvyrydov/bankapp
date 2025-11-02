@@ -15,9 +15,14 @@ import org.springframework.security.web.authentication.AnonymousAuthenticationFi
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, SessionAuthenticationFilter sessionAuthenticationFilter) throws Exception {
+    public SecurityFilterChain filterChain(
+        HttpSecurity http,
+        TokenRefreshFilter tokenRefreshFilter,
+        SessionAuthenticationFilter sessionAuthenticationFilter)
+        throws Exception {
         http
             .addFilterBefore(sessionAuthenticationFilter, AnonymousAuthenticationFilter.class)
+            .addFilterBefore(tokenRefreshFilter, SessionAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/", "/login", "/perform-login",

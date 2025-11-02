@@ -11,7 +11,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableFeignClients
 @EnableScheduling
 public class GeneratorApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(GeneratorApplication.class, args);
-    }
+
+  public static void main(String[] args) {
+    SpringApplication.run(GeneratorApplication.class, args);
+  }
 }

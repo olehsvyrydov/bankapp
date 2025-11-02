@@ -12,6 +12,9 @@ import com.bank.frontend.client.AccountsClient;
 import com.bank.frontend.service.LocalizationService;
 import com.bank.frontend.service.AuthService;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -22,8 +25,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ui.Model;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -52,6 +59,7 @@ class AuthControllerTest {
     private AuthController authController;
 
     private LoginRequest loginRequest;
+    private Validator validator;
 
     @BeforeEach
     void setUp() {
@@ -78,6 +86,27 @@ class AuthControllerTest {
         stubMessage("validation.birthDate.past", "Birth date must be in the past");
         stubMessage("message.ageTooYoung", "You must be at least 18 years old");
 
+        validator = Validation.buildDefaultValidatorFactory().getValidator();
+
+        lenient().when(localizationService.resolveMessage(any()))
+            .thenAnswer(invocation -> {
+                Object argument = invocation.getArgument(0);
+                if (argument instanceof ObjectError objectError) {
+                    String[] codes = objectError.getCodes();
+                    if (codes != null) {
+                        for (String code : codes) {
+                            String trimmedCode = code.replace("{", "").replace("}", "");
+                            String resolved = localizationService.getMessage(trimmedCode, objectError.getArguments());
+                            if (resolved != null) {
+                                return resolved;
+                            }
+                        }
+                    }
+                    return objectError.getDefaultMessage();
+                }
+                return "";
+            });
+
         // Stub the no-args getMessage method for username exists
         lenient().when(localizationService.getMessage("register.error.usernameExists"))
             .thenReturn("Username already exists");
@@ -92,6 +121,20 @@ class AuthControllerTest {
     private void stubMessage(String key, String value) {
         lenient().when(localizationService.getMessage(eq(key), any(Object[].class)))
             .thenReturn(value);
+    }
+
+    private BindingResult validateRegisterRequest(RegisterRequest request) {
+        BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(request, "registerRequest");
+
+        Set<ConstraintViolation<RegisterRequest>> violations = validator.validate(request);
+        for (ConstraintViolation<RegisterRequest> violation : violations) {
+            String field = violation.getPropertyPath().toString();
+            String messageTemplate = violation.getMessageTemplate();
+            String trimmedCode = messageTemplate != null ? messageTemplate.replace("{", "").replace("}", "") : null;
+            bindingResult.rejectValue(field, trimmedCode, violation.getMessage());
+        }
+
+        return bindingResult;
     }
 
 
@@ -584,8 +627,10 @@ class AuthControllerTest {
             when(authService.register(any(RegisterRequest.class))).thenReturn(authResponse);
             when(accountsClient.createUserAccount(any(CreateAccountRequest.class))).thenReturn(accountResponse);
 
+            BindingResult bindingResult = validateRegisterRequest(registerRequest);
+
             // When
-            String result = authController.performRegister(registerRequest, session, model);
+            String result = authController.performRegister(registerRequest, bindingResult, session, model);
 
             // Then
             assertThat(result).isEqualTo("redirect:/login?registered=true");
@@ -609,7 +654,10 @@ class AuthControllerTest {
             );
 
             // When
-            String result = authController.performRegister(mismatchRequest, session, model);
+            BindingResult bindingResult = validateRegisterRequest(mismatchRequest);
+
+            // When
+            String result = authController.performRegister(mismatchRequest, bindingResult, session, model);
 
             // Then
             assertThat(result).isEqualTo("register");
@@ -633,7 +681,10 @@ class AuthControllerTest {
             );
 
             // When
-            String result = authController.performRegister(shortPasswordRequest, session, model);
+            BindingResult bindingResult = validateRegisterRequest(shortPasswordRequest);
+
+            // When
+            String result = authController.performRegister(shortPasswordRequest, bindingResult, session, model);
 
             // Then
             assertThat(result).isEqualTo("register");
@@ -657,7 +708,10 @@ class AuthControllerTest {
             );
 
             // When
-            String result = authController.performRegister(underageRequest, session, model);
+            BindingResult bindingResult = validateRegisterRequest(underageRequest);
+
+            // When
+            String result = authController.performRegister(underageRequest, bindingResult, session, model);
 
             // Then
             assertThat(result).isEqualTo("register");
@@ -675,7 +729,10 @@ class AuthControllerTest {
             when(authService.register(any(RegisterRequest.class))).thenReturn(authResponse);
 
             // When
-            String result = authController.performRegister(registerRequest, session, model);
+            BindingResult bindingResult = validateRegisterRequest(registerRequest);
+
+            // When
+            String result = authController.performRegister(registerRequest, bindingResult, session, model);
 
             // Then
             assertThat(result).isEqualTo("register");
@@ -694,7 +751,10 @@ class AuthControllerTest {
             when(authService.register(any(RegisterRequest.class))).thenReturn(authResponse);
 
             // When
-            String result = authController.performRegister(registerRequest, session, model);
+            BindingResult bindingResult = validateRegisterRequest(registerRequest);
+
+            // When
+            String result = authController.performRegister(registerRequest, bindingResult, session, model);
 
             // Then
             assertThat(result).isEqualTo("register");
@@ -712,7 +772,10 @@ class AuthControllerTest {
             when(authService.register(any(RegisterRequest.class))).thenReturn(authResponse);
 
             // When
-            String result = authController.performRegister(registerRequest, session, model);
+            BindingResult bindingResult = validateRegisterRequest(registerRequest);
+
+            // When
+            String result = authController.performRegister(registerRequest, bindingResult, session, model);
 
             // Then
             assertThat(result).isEqualTo("register");
@@ -731,7 +794,10 @@ class AuthControllerTest {
             when(accountsClient.createUserAccount(any(CreateAccountRequest.class))).thenReturn(accountResponse);
 
             // When
-            String result = authController.performRegister(registerRequest, session, model);
+            BindingResult bindingResult = validateRegisterRequest(registerRequest);
+
+            // When
+            String result = authController.performRegister(registerRequest, bindingResult, session, model);
 
             // Then
             assertThat(result).isEqualTo("register");
@@ -747,7 +813,9 @@ class AuthControllerTest {
                 .thenThrow(new RuntimeException("Service down"));
 
             // When
-            String result = authController.performRegister(registerRequest, session, model);
+            BindingResult bindingResult = validateRegisterRequest(registerRequest);
+
+            String result = authController.performRegister(registerRequest, bindingResult, session, model);
 
             // Then
             assertThat(result).isEqualTo("register");
@@ -767,15 +835,6 @@ class AuthControllerTest {
         void logout_WithUsername() {
             // Given
             when(session.getAttribute("username")).thenReturn("testuser");
-        lenient().when(localizationService.resolveMessage(any()))
-            .thenAnswer(invocation -> {
-                Object error = invocation.getArgument(0);
-                if (error instanceof org.springframework.validation.ObjectError objectError) {
-                    return objectError.getDefaultMessage();
-                }
-                return "";
-            });
-
             // When
             String result = authController.logout(session);
 
@@ -814,14 +873,6 @@ class AuthControllerTest {
             // Given
             when(session.getAttribute("access_token")).thenReturn("valid-token");
             when(session.getAttribute("username")).thenReturn("testuser");
-        lenient().when(localizationService.resolveMessage(any()))
-            .thenAnswer(invocation -> {
-                Object error = invocation.getArgument(0);
-                if (error instanceof org.springframework.validation.ObjectError objectError) {
-                    return objectError.getDefaultMessage();
-                }
-                return "";
-            });
             doNothing().when(authService).changePassword(any(ChangePasswordRequest.class), anyString());
 
             // When
@@ -840,15 +891,6 @@ class AuthControllerTest {
             // Given
             when(session.getAttribute("access_token")).thenReturn(null);
             when(session.getAttribute("username")).thenReturn("testuser");
-        lenient().when(localizationService.resolveMessage(any()))
-            .thenAnswer(invocation -> {
-                Object error = invocation.getArgument(0);
-                if (error instanceof org.springframework.validation.ObjectError objectError) {
-                    return objectError.getDefaultMessage();
-                }
-                return "";
-            });
-
             // When
             String result = authController.changePassword(session, "newPassword123", redirectAttributes);
 
@@ -880,14 +922,6 @@ class AuthControllerTest {
             // Given
             when(session.getAttribute("access_token")).thenReturn("valid-token");
             when(session.getAttribute("username")).thenReturn("testuser");
-        lenient().when(localizationService.resolveMessage(any()))
-            .thenAnswer(invocation -> {
-                Object error = invocation.getArgument(0);
-                if (error instanceof org.springframework.validation.ObjectError objectError) {
-                    return objectError.getDefaultMessage();
-                }
-                return "";
-            });
             doThrow(new BusinessException("Failed to change password"))
                 .when(authService).changePassword(any(ChangePasswordRequest.class), anyString());
 

@@ -10,11 +10,15 @@ import com.bank.frontend.client.AccountsClient;
 import com.bank.frontend.service.AuthService;
 import com.bank.frontend.service.LocalizationService;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,10 +26,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.time.LocalDate;
-import java.time.Period;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequiredArgsConstructor
@@ -34,15 +37,14 @@ public class AuthController {
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
     private static final String LOGIN_BASE_PATH = "/login";
     private static final String REGISTER_BASE_PATH = "/register";
-    private static final int MIN_REGISTRATION_AGE = 18;
-
+    public static final String ACCESS_TOKEN = "access_token";
     private final AuthService authService;
     private final AccountsClient accountsClient;
     private final LocalizationService localizationService;
 
     @GetMapping("/")
     public String index(HttpSession session) {
-        String token = (String) session.getAttribute("access_token");
+        String token = (String) session.getAttribute(ACCESS_TOKEN);
 
         if (token != null) {
             log.debug("User has active session, redirecting to home");
@@ -61,7 +63,7 @@ public class AuthController {
         HttpSession session,
         Model model) {
 
-        String token = (String) session.getAttribute("access_token");
+        String token = (String) session.getAttribute(ACCESS_TOKEN);
         if (token != null) {
             return "redirect:/home";
         }
@@ -105,7 +107,7 @@ public class AuthController {
             TokenResponse tokens = response.getData();
 
             if (tokens != null && tokens.accessToken() != null) {
-                session.setAttribute("access_token", tokens.accessToken());
+                session.setAttribute(ACCESS_TOKEN, tokens.accessToken());
                 session.setAttribute("refresh_token", tokens.refreshToken());
                 session.setAttribute("token_scope", tokens.scope());
                 session.setAttribute("token_type", tokens.tokenType());
@@ -133,7 +135,7 @@ public class AuthController {
 
     @GetMapping("/register")
     public String registerPage(HttpSession session, Model model) {
-        String token = (String) session.getAttribute("access_token");
+        String token = (String) session.getAttribute(ACCESS_TOKEN);
         if (token != null) {
             return "redirect:/home";
         }
@@ -145,74 +147,58 @@ public class AuthController {
 
     @PostMapping("/perform-register")
     public String performRegister(
-        @ModelAttribute RegisterRequest registerRequest,
+        @Valid @ModelAttribute RegisterRequest registerRequest,
+        BindingResult bindingResult,
         HttpSession session,
         Model model) {
 
         log.debug("Processing registration for user: {}", registerRequest.username());
+        model.addAttribute("languageLinks", buildLanguageLinks(REGISTER_BASE_PATH));
 
-        // Validate passwords match
         if (!registerRequest.password().equals(registerRequest.confirmPassword())) {
-            model.addAttribute("error", localizationService.getMessage("message.passwordMismatch"));
+            String mismatchMessage = localizationService.getMessage("message.passwordMismatch");
+            bindingResult.rejectValue("confirmPassword", "message.passwordMismatch", null, mismatchMessage);
+            model.addAttribute("error", mismatchMessage);
             model.addAttribute("registerRequest", registerRequest);
-            model.addAttribute("languageLinks", buildLanguageLinks(REGISTER_BASE_PATH));
             return "register";
         }
 
-        // Validate password length
-        if (registerRequest.password().length() < 6) {
-            model.addAttribute("error", localizationService.getMessage("message.passwordTooShort"));
+        if (bindingResult.hasErrors()) {
+            String errorMessage = bindingResult.getAllErrors().stream()
+                .map(this::resolveValidationMessage)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .collect(Collectors.joining(", "));
+            if (!StringUtils.hasText(errorMessage)) {
+                errorMessage = localizationService.getMessage("register.error.details");
+            }
+            model.addAttribute("error", errorMessage);
             model.addAttribute("registerRequest", registerRequest);
-            model.addAttribute("languageLinks", buildLanguageLinks(REGISTER_BASE_PATH));
-            return "register";
-        }
-
-        LocalDate birthDate = registerRequest.birthDate();
-        if (birthDate == null) {
-            model.addAttribute("error", localizationService.getMessage("validation.birthDate.required"));
-            model.addAttribute("registerRequest", registerRequest);
-            model.addAttribute("languageLinks", buildLanguageLinks(REGISTER_BASE_PATH));
-            return "register";
-        }
-
-        if (!birthDate.isBefore(LocalDate.now())) {
-            model.addAttribute("error", localizationService.getMessage("validation.birthDate.past"));
-            model.addAttribute("registerRequest", registerRequest);
-            model.addAttribute("languageLinks", buildLanguageLinks(REGISTER_BASE_PATH));
-            return "register";
-        }
-
-        if (!hasMinimumAge(birthDate)) {
-            model.addAttribute("error", localizationService.getMessage("message.ageTooYoung"));
-            model.addAttribute("registerRequest", registerRequest);
-            model.addAttribute("languageLinks", buildLanguageLinks(REGISTER_BASE_PATH));
             return "register";
         }
 
         try {
             var response = authService.register(registerRequest);
             if (!response.isSuccess()) {
-                log.warn("Registration failed for user {}: {}", registerRequest.username(),
-                    ErrorMessageUtil.sanitizeForLogging(response.getMessage()));
+                if (log.isWarnEnabled()) {
+                    log.warn("Registration failed for user {}: {}", registerRequest.username(),
+                        ErrorMessageUtil.sanitizeForLogging(response.getMessage()));
+                }
 
-                // Extract the actual error message from response
                 String backendMessage = com.bank.frontend.util.MessageHelper.extractReadable(response.getMessage());
                 log.debug("Extracted backend message: '{}'", backendMessage);
 
                 String errorMessage = null;
 
-                // Check if username already exists
                 if (backendMessage != null && backendMessage.toLowerCase().contains("username already exists")) {
                     String baseMessage = localizationService.getMessage("register.error.usernameExists");
 
-                    // Try to generate alternative username suggestion
                     String suggestedUsername = generateAlternativeUsername(
                         registerRequest.username(),
                         registerRequest.firstName(),
                         registerRequest.lastName()
                     );
 
-                    // Only add suggestion if it's valid (not just the original username with year)
                     if (suggestedUsername != null && !suggestedUsername.equals(registerRequest.username() + java.time.Year.now().getValue())) {
                         errorMessage = baseMessage + " " +
                             localizationService.getMessage("register.error.trySuggestion", suggestedUsername);
@@ -220,7 +206,6 @@ public class AuthController {
                         errorMessage = baseMessage;
                     }
                 } else if (backendMessage != null && !backendMessage.isBlank()) {
-                    // Try to translate the backend message
                     String messageKey = com.bank.frontend.util.MessageHelper.toMessageKey(backendMessage);
                     if (messageKey != null) {
                         errorMessage = localizationService.getMessageOrDefault(messageKey, backendMessage);
@@ -229,14 +214,12 @@ public class AuthController {
                     }
                 }
 
-                // Final fallback to generic message if nothing worked
                 if (errorMessage == null || errorMessage.isBlank()) {
                     errorMessage = localizationService.getMessage("register.error.details");
                 }
 
                 model.addAttribute("error", errorMessage);
                 model.addAttribute("registerRequest", registerRequest);
-                model.addAttribute("languageLinks", buildLanguageLinks(REGISTER_BASE_PATH));
                 return "register";
             } else {
                 CreateAccountRequest accountsRequest = CreateAccountRequest.builder()
@@ -251,7 +234,6 @@ public class AuthController {
                     log.error("Account creation failed for user {}: {}", registerRequest.username(), createAccountResponse.getMessage());
                     model.addAttribute("error", localizationService.getMessage("register.account.create.failure"));
                     model.addAttribute("registerRequest", registerRequest);
-                    model.addAttribute("languageLinks", buildLanguageLinks(REGISTER_BASE_PATH));
                     return "register";
                 }
                 log.info("User {} registered successfully", registerRequest.username());
@@ -261,12 +243,10 @@ public class AuthController {
         } catch (Exception e) {
             log.error("Registration error for user {}: {}", registerRequest.username(), e.getMessage());
 
-            // Try to extract validation errors from the exception message
             String validationErrors = com.bank.frontend.util.MessageHelper.extractValidationErrors(e.getMessage());
             if (validationErrors != null && !validationErrors.isBlank()) {
                 log.debug("Extracted validation errors: {}", validationErrors);
 
-                // Try to translate the validation error if it matches a known pattern
                 String messageKey = com.bank.frontend.util.MessageHelper.toMessageKey(validationErrors);
                 if (messageKey != null) {
                     String translatedError = localizationService.getMessageOrDefault(messageKey, validationErrors);
@@ -275,11 +255,9 @@ public class AuthController {
                     model.addAttribute("error", validationErrors);
                 }
             } else {
-                // Fall back to generic service unavailable message
                 model.addAttribute("error", localizationService.getMessage("register.service.unavailable"));
             }
             model.addAttribute("registerRequest", registerRequest);
-            model.addAttribute("languageLinks", buildLanguageLinks(REGISTER_BASE_PATH));
             return "register";
         }
     }
@@ -292,8 +270,85 @@ public class AuthController {
         return links;
     }
 
-    private boolean hasMinimumAge(LocalDate birthDate) {
-        return Period.between(birthDate, LocalDate.now()).getYears() >= MIN_REGISTRATION_AGE;
+    private String resolveValidationMessage(ObjectError error) {
+        Object[] arguments = error.getArguments();
+
+        String directMessage = tryResolveMessage(localizationService.resolveMessage(error), arguments, false);
+        if (StringUtils.hasText(directMessage)) {
+            return directMessage;
+        }
+
+        String[] codes = error.getCodes();
+        if (codes != null) {
+            for (String code : codes) {
+                String resolved = tryResolveMessage(code, arguments, false);
+                if (StringUtils.hasText(resolved)) {
+                    return resolved;
+                }
+            }
+        }
+
+        String defaultMessage = error.getDefaultMessage();
+        if (StringUtils.hasText(defaultMessage)) {
+            String resolvedDefault = tryResolveMessage(defaultMessage, arguments, true);
+            if (StringUtils.hasText(resolvedDefault)) {
+                return resolvedDefault;
+            }
+            return defaultMessage;
+        }
+        return "";
+    }
+
+    private String tryResolveMessage(String candidate, Object[] arguments, boolean allowFallback) {
+        if (!StringUtils.hasText(candidate)) {
+            return "";
+        }
+
+        String trimmed = candidate.trim();
+
+        if (!looksLikeMessageKey(trimmed)) {
+            return trimmed;
+        }
+
+        String key = extractMessageKey(trimmed);
+        if (!StringUtils.hasText(key)) {
+            return allowFallback ? trimmed : "";
+        }
+
+        try {
+            String resolved = localizationService.getMessage(key, arguments);
+            if (StringUtils.hasText(resolved)) {
+                return resolved;
+            }
+        } catch (Exception ex) {
+            if (log.isTraceEnabled()) {
+                log.trace("Failed to resolve message for key '{}': {}", key, ex.getMessage());
+            }
+        }
+
+        return allowFallback ? key : "";
+    }
+
+    private boolean looksLikeMessageKey(String value) {
+        if (!StringUtils.hasText(value)) {
+            return false;
+        }
+        String trimmed = value.trim();
+        if (trimmed.startsWith("{") && trimmed.endsWith("}") && trimmed.length() > 2) {
+            return true;
+        }
+        return trimmed.matches("[a-zA-Z0-9_.-]+");
+    }
+
+    private String extractMessageKey(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "";
+        }
+        String trimmed = value.trim();
+        if (trimmed.startsWith("{") && trimmed.endsWith("}") && trimmed.length() > 2) {
+            return trimmed.substring(1, trimmed.length() - 1);
+        }
+        return trimmed;
     }
 
     /**
@@ -315,23 +370,23 @@ public class AuthController {
 
         // Only use last name if it's not null and not empty
         if (lastName != null && !lastName.isBlank()) {
-            if (suggestion.length() > 0) {
+            if (!suggestion.isEmpty()) {
                 suggestion.append(".");
             }
             suggestion.append(lastName.toLowerCase().trim());
         }
 
         // If we couldn't build from name, use the original username
-        if (suggestion.length() == 0 && username != null && !username.isBlank()) {
+        if (suggestion.isEmpty() && username != null && !username.isBlank()) {
             suggestion.append(username);
         }
 
         // Add year to make it unique
-        if (suggestion.length() > 0) {
+        if (!suggestion.isEmpty()) {
             suggestion.append(java.time.Year.now().getValue());
         }
 
-        return suggestion.length() > 0 ? suggestion.toString() : null;
+        return !suggestion.isEmpty() ? suggestion.toString() : null;
     }
 
     @GetMapping("/logout")
@@ -349,7 +404,7 @@ public class AuthController {
         @RequestParam String newPassword,
         RedirectAttributes redirectAttributes) {
         try {
-            String token = (String) session.getAttribute("access_token");
+            String token = (String) session.getAttribute(ACCESS_TOKEN);
             String username = (String) session.getAttribute("username");
 
             if (token == null || username == null) {

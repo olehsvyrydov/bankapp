@@ -1,12 +1,13 @@
 
 package com.bank.common.dto.contracts.auth;
 
+import com.bank.common.validation.MinAge;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
 
-import java.time.Instant;
 import java.time.LocalDate;
 
 public record RegisterRequest(
@@ -23,18 +24,20 @@ public record RegisterRequest(
     String lastName,
 
     @NotBlank(message = "{validation.password.required}")
-    @Size(min = 6, message = "{validation.password.minLength}")
+    @Size(min = 6, message = "{message.passwordTooShort}")
     String password,
 
     @NotBlank(message = "{validation.confirmPassword.required}")
-    @Size(min = 6, message = "{validation.password.minLength}")
+    @Size(min = 6, message = "{message.passwordTooShort}")
     String confirmPassword,
 
     @Email(message = "{validation.email.invalid}")
     @NotBlank(message = "{validation.email.required}")
     String email,
 
+    @NotNull(message = "{validation.birthDate.required}")
     @Past(message = "{validation.birthDate.past}")
+    @MinAge(value = 18, message = "{message.ageTooYoung}")
     LocalDate birthDate
 )
 {

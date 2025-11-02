@@ -7,7 +7,8 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 @SpringBootApplication(scanBasePackages = {"com.bank.blocker", "com.bank.common"})
 @EnableDiscoveryClient
 public class BlockerApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(BlockerApplication.class, args);
-    }
+
+  public static void main(String[] args) {
+    SpringApplication.run(BlockerApplication.class, args);
+  }
 }

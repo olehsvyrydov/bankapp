@@ -10,7 +10,7 @@ import java.lang.annotation.*;
  * The age is calculated in years from the annotated date to the current date.
  * Commonly used to ensure users are at least 18 years old.
  */
-@Target({ElementType.FIELD, ElementType.PARAMETER})
+@Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.RECORD_COMPONENT})
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = MinAgeValidator.class)
 @Documented

@@ -29,17 +29,19 @@ public class CashServiceImpl implements CashService
     private final AccountsClient accountsClient;
     private final BlockerClient blockerClient;
     private final NotificationClient notificationClient;
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     public CashServiceImpl(TransactionRepository transactionRepository,
         AccountsClient accountsClient,
         BlockerClient blockerClient,
-        NotificationClient notificationClient)
+        NotificationClient notificationClient,
+        ObjectMapper objectMapper)
     {
         this.transactionRepository = transactionRepository;
         this.accountsClient = accountsClient;
         this.blockerClient = blockerClient;
         this.notificationClient = notificationClient;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -173,11 +175,11 @@ public class CashServiceImpl implements CashService
     private BusinessException mapFeignException(String action, FeignException ex)
     {
         String message = action;
-        if (ex.content() != null)
+        if (ex.responseBody().isPresent())
         {
             try
             {
-                JsonNode node = OBJECT_MAPPER.readTree(ex.contentUTF8());
+                JsonNode node = objectMapper.readTree(ex.contentUTF8());
                 if (node.has("message"))
                 {
                     message = node.get("message").asText();
