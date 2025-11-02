@@ -630,7 +630,7 @@ class AuthControllerTest {
             BindingResult bindingResult = validateRegisterRequest(registerRequest);
 
             // When
-            String result = authController.performRegister(registerRequest, bindingResult, session, model);
+            String result = authController.performRegister(registerRequest, bindingResult, model);
 
             // Then
             assertThat(result).isEqualTo("redirect:/login?registered=true");
@@ -657,7 +657,7 @@ class AuthControllerTest {
             BindingResult bindingResult = validateRegisterRequest(mismatchRequest);
 
             // When
-            String result = authController.performRegister(mismatchRequest, bindingResult, session, model);
+            String result = authController.performRegister(mismatchRequest, bindingResult, model);
 
             // Then
             assertThat(result).isEqualTo("register");
@@ -684,7 +684,7 @@ class AuthControllerTest {
             BindingResult bindingResult = validateRegisterRequest(shortPasswordRequest);
 
             // When
-            String result = authController.performRegister(shortPasswordRequest, bindingResult, session, model);
+            String result = authController.performRegister(shortPasswordRequest, bindingResult, model);
 
             // Then
             assertThat(result).isEqualTo("register");
@@ -711,7 +711,7 @@ class AuthControllerTest {
             BindingResult bindingResult = validateRegisterRequest(underageRequest);
 
             // When
-            String result = authController.performRegister(underageRequest, bindingResult, session, model);
+            String result = authController.performRegister(underageRequest, bindingResult, model);
 
             // Then
             assertThat(result).isEqualTo("register");
@@ -732,7 +732,7 @@ class AuthControllerTest {
             BindingResult bindingResult = validateRegisterRequest(registerRequest);
 
             // When
-            String result = authController.performRegister(registerRequest, bindingResult, session, model);
+            String result = authController.performRegister(registerRequest, bindingResult, model);
 
             // Then
             assertThat(result).isEqualTo("register");
@@ -754,7 +754,7 @@ class AuthControllerTest {
             BindingResult bindingResult = validateRegisterRequest(registerRequest);
 
             // When
-            String result = authController.performRegister(registerRequest, bindingResult, session, model);
+            String result = authController.performRegister(registerRequest, bindingResult, model);
 
             // Then
             assertThat(result).isEqualTo("register");
@@ -775,7 +775,7 @@ class AuthControllerTest {
             BindingResult bindingResult = validateRegisterRequest(registerRequest);
 
             // When
-            String result = authController.performRegister(registerRequest, bindingResult, session, model);
+            String result = authController.performRegister(registerRequest, bindingResult, model);
 
             // Then
             assertThat(result).isEqualTo("register");
@@ -797,7 +797,7 @@ class AuthControllerTest {
             BindingResult bindingResult = validateRegisterRequest(registerRequest);
 
             // When
-            String result = authController.performRegister(registerRequest, bindingResult, session, model);
+            String result = authController.performRegister(registerRequest, bindingResult, model);
 
             // Then
             assertThat(result).isEqualTo("register");
@@ -815,7 +815,7 @@ class AuthControllerTest {
             // When
             BindingResult bindingResult = validateRegisterRequest(registerRequest);
 
-            String result = authController.performRegister(registerRequest, bindingResult, session, model);
+            String result = authController.performRegister(registerRequest, bindingResult, model);
 
             // Then
             assertThat(result).isEqualTo("register");

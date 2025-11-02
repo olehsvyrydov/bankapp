@@ -149,7 +149,6 @@ public class AuthController {
     public String performRegister(
         @Valid @ModelAttribute RegisterRequest registerRequest,
         BindingResult bindingResult,
-        HttpSession session,
         Model model) {
 
         log.debug("Processing registration for user: {}", registerRequest.username());

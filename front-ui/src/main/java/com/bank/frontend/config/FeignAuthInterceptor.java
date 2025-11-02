@@ -1,4 +1,3 @@
-
 package com.bank.frontend.config;
 
 import feign.RequestInterceptor;
@@ -8,7 +7,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
