@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en" th:attr="lang=${#locale.language}"
+       xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{app.name} + ' - ' + #{home.title}">Bank - Home</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body th:attr="data-transfer-same-account=${#messages.msg('transfer.sameAccount')},
+  data-amount-positive=${#messages.msg('validation.amount.positive')},
+  data-modal-cancel=${#messages.msg('common.cancel')},
+  data-modal-confirm=${#messages.msg('common.confirm')},
+  data-modal-delete=${#messages.msg('account.deleteConfirm')}">
+<div class="container">
+    <div class="header">
+        <h1 th:text="#{app.welcome}">Welcome to Bank</h1>
+        <div class="user-info">
+            <div th:replace="~{fragments/language-switch :: languageSelector}"></div>
+            <span th:text="${username}">Username</span>
+            <a th:href="@{/logout}" class="btn btn-secondary" th:text="#{nav.logout}">Logout</a>
+        </div>
+    </div>
+
+    <div class="notifications" th:if="${notifications != null and !notifications.isEmpty()}">
+        <h3>Recent Notifications</h3>
+        <div class="notification-list">
+            <div th:each="note : ${notifications}"
+                 class="notification-item"
+                 th:classappend="${note.read ? '' : 'unread'}">
+                <span th:text="${note.message}"></span>
+                <small th:text="${#temporals.format(note.createdAt, 'dd-MM-yyyy HH:mm')}"></small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Settings Section -->
+    <div class="section">
+        <h2>Account Settings</h2>
+
+        <div class="account-info">
+            <div class="info-row">
+                <label><span th:text="#{user.username}">Username</span>:
+                    <span th:text="${account.username}"></span>
+                </label>
+            </div>
+
+            <form th:action="@{/account/update}" method="post" class="account-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName" th:text="#{user.firstName}">First Name:</label>
+                        <input type="text" id="firstName" name="firstName"
+                               th:value="${account.firstName}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lastName" th:text="#{user.lastName}">Last Name:</label>
+                        <input type="text" id="lastName" name="lastName"
+                               th:value="${account.lastName}" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email" th:text="#{user.email}">Email:</label>
+                    <input type="email" id="email" name="email"
+                           th:value="${account.email}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="birthDate" th:text="#{user.birthDate}">Date of Birth:</label>
+                    <input type="date" id="birthDate" name="birthDate"
+                           th:value="${account.birthDate}" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" th:text="#{common.save}">Update Account</button>
+            </form>
+
+            <div class="password-section">
+                <h3 th:text="#{user.changePassword}">Change Password</h3>
+                <form th:action="@{/change-password}" method="post">
+                    <div class="form-group">
+                        <label for="newPassword" th:text="#{user.password}">New Password:</label>
+                        <input type="password" id="newPassword" name="newPassword"
+                               required minlength="6">
+                    </div>
+                    <button type="submit" class="btn btn-primary" th:text="#{user.changePassword}">Change Password</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Bank Accounts -->
+        <div class="bank-accounts">
+            <h3 th:text="#{home.accounts}">My Bank Accounts</h3>
+
+            <div class="accounts-list">
+                <div th:each="ba : ${account.bankAccounts}" class="account-card">
+                    <div class="account-header">
+                        <h4 th:text="${ba.currency}"></h4>
+                        <span class="balance" th:text="${#numbers.formatDecimal(ba.balance, 1, 2)}"></span>
+                    </div>
+                    <div class="account-id">
+                        <small><span th:text="#{account.id}">Account ID</span>: <strong th:text="${ba.id}"></strong></small>
+                    </div>
+                    <form th:action="@{/bank-account/delete}" method="post"
+                          th:attr="data-confirm=#{account.deleteConfirm}">
+                        <input type="hidden" name="bankAccountId" th:value="${ba.id}">
+                        <button type="submit" class="btn btn-danger btn-sm" th:text="#{common.delete}">Delete</button>
+                    </form>
+                </div>
+            </div>
+
+            <div th:if="${account.bankAccounts.size() != 3}" class="add-account">
+                <h4 th:text="#{home.addAccount}">Add New Bank Account</h4>
+                <form th:action="@{/bank-account/create}" method="post">
+                    <div class="form-group">
+                        <label for="currency" th:text="#{account.currency}">Currency:</label>
+                        <select id="currency" name="currency" required th:disabled="${availableCurrencies.isEmpty()}">
+                            <option th:each="cur : ${availableCurrencies}" th:value="${cur}" th:text="${cur}"></option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary" th:disabled="${availableCurrencies.isEmpty()}" th:text="#{account.create}">Add Account</button>
+                    <p th:if="${availableCurrencies.isEmpty()}" class="info-text" th:text="#{account.allCreated}">All supported currencies already have accounts.</p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cash Operations Section -->
+    <div class="section">
+        <h2 th:text="#{cash.deposit} + ' / ' + #{cash.withdraw}">Cash Operations</h2>
+
+        <div class="operations-container">
+            <form th:action="@{/cash/deposit}" method="post" class="operation-form">
+                <h3 th:text="#{cash.deposit}">Deposit Money</h3>
+
+                <div class="form-group">
+                    <label for="depositAccount" th:text="#{cash.selectAccount}">Select Account:</label>
+                    <select id="depositAccount" name="bankAccountId" required>
+                        <option th:each="ba : ${account.bankAccounts}"
+                                th:value="${ba.id}"
+                                th:text="${ba.currency + ' - ' + #numbers.formatDecimal(ba.balance, 1, 2)}"></option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="depositAmount" th:text="#{cash.amount}">Amount:</label>
+                    <input type="number" id="depositAmount" name="amount"
+                           min="0.01" step="0.01" required>
+                </div>
+
+                <button type="submit" class="btn btn-success" th:text="#{cash.depositButton}">Deposit</button>
+            </form>
+
+            <form th:action="@{/cash/withdraw}" method="post" class="operation-form">
+                <h3 th:text="#{cash.withdraw}">Withdraw Money</h3>
+                <div class="form-group">
+                    <label for="withdrawAccount" th:text="#{cash.selectAccount}">Select Account:</label>
+                    <select id="withdrawAccount" name="bankAccountId" required>
+                        <option th:each="ba : ${account.bankAccounts}"
+                                th:value="${ba.id}"
+                                th:text="${ba.currency + ' - ' + #numbers.formatDecimal(ba.balance, 1, 2)}"></option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="withdrawAmount" th:text="#{cash.amount}">Amount:</label>
+                    <input type="number" id="withdrawAmount" name="amount"
+                           min="0.01" step="0.01" required>
+                </div>
+
+                <button type="submit" class="btn btn-warning" th:text="#{cash.withdrawButton}">Withdraw</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Transfer Between Own Accounts -->
+    <div class="section">
+        <h2 th:text="#{transfer.own}">Transfer Between My Accounts</h2>
+
+        <form th:action="@{/transfer/own}" method="post" class="transfer-form">
+            <div class="form-group">
+                <label for="fromAccount" th:text="#{transfer.from}">From Account:</label>
+                <select id="fromAccount" name="fromBankAccountId" required>
+                    <option th:each="ba : ${account.bankAccounts}"
+                            th:value="${ba.id}"
+                            th:text="${ba.currency + ' - ' + #numbers.formatDecimal(ba.balance, 1, 2)}"></option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="toAccount" th:text="#{transfer.to}">To Account:</label>
+                <select id="toAccount" name="toBankAccountId" required>
+                    <option th:each="ba : ${account.bankAccounts}"
+                            th:value="${ba.id}"
+                            th:text="${ba.currency + ' - ' + #numbers.formatDecimal(ba.balance, 1, 2)}"></option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="ownTransferAmount" th:text="#{transfer.amount}">Amount:</label>
+                <input type="number" id="ownTransferAmount" name="amount"
+                       min="0.01" step="0.01" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" th:text="#{transfer.button}">Transfer</button>
+        </form>
+    </div>
+
+    <!-- Transfer to Other Account -->
+    <div class="section">
+        <h2 th:text="#{transfer.other}">Transfer to Another Account</h2>
+
+        <form th:action="@{/transfer/other}" method="post" class="transfer-form">
+            <div class="form-group">
+                <label for="fromAccountOther" th:text="#{transfer.from}">From My Account:</label>
+                <select id="fromAccountOther" name="fromBankAccountId" required>
+                    <option th:each="ba : ${account.bankAccounts}"
+                            th:value="${ba.id}"
+                            th:text="${ba.currency + ' - ' + #numbers.formatDecimal(ba.balance, 1, 2)}"></option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label th:text="#{transfer.recipient}">Recipient:</label>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="recipientType" value="email" id="recipientTypeEmail" checked>
+                        <span th:text="#{transfer.byEmail}">By Email Address</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="recipientType" value="accountId" id="recipientTypeAccountId">
+                        <span th:text="#{transfer.byAccountId}">By Bank Account ID</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group" id="emailGroup">
+                <label for="recipientEmail" th:text="#{transfer.recipientEmail}">Recipient Email:</label>
+                <input type="email" id="recipientEmail" name="recipientEmail"
+                       th:placeholder="#{transfer.emailPlaceholder}">
+            </div>
+
+            <div class="form-group" id="accountIdGroup" style="display: none;">
+                <label for="recipientBankAccountId" th:text="#{transfer.recipientAccountId}">Recipient Bank Account ID:</label>
+                <input type="number" id="recipientBankAccountId"
+                       name="toBankAccountId" min="1"
+                       th:placeholder="#{transfer.accountIdPlaceholder}">
+            </div>
+
+            <div class="form-group">
+                <label for="otherTransferAmount" th:text="#{transfer.amount}">Amount:</label>
+                <input type="number" id="otherTransferAmount" name="amount"
+                       min="0.01" step="0.01" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" th:text="#{transfer.button}">Transfer</button>
+        </form>
+    </div>
+
+    <!-- Exchange Rates -->
+    <div class="section">
+        <h2 th:text="#{exchange.title}">Exchange Rates</h2>
+
+        <div class="exchange-rates">
+            <div th:if="${exchangeRates == null or #lists.isEmpty(exchangeRates)}" class="info-text" th:text="#{exchange.loading}">
+                Unable to load exchange rates right now. Please try again later.
+            </div>
+            <table th:if="${exchangeRates != null and !exchangeRates.isEmpty()}">
+                <thead>
+                <tr>
+                    <th th:text="#{exchange.currency}">Currency</th>
+                    <th th:text="#{exchange.buy}">Buy</th>
+                    <th th:text="#{exchange.sell}">Sell</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="rate : ${exchangeRates}">
+                    <td th:text="${rate.currency}"></td>
+                    <td th:text="${#numbers.formatDecimal(rate.buyRate, 1, 2)}"></td>
+                    <td th:text="${#numbers.formatDecimal(rate.sellRate, 1, 2)}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+    window.app = window.app || {};
+    window.app.flashErrors = [];
+    window.app.flashSuccess = [];
+    /*[# th:if="${error != null}"]*/
+    window.app.flashErrors.push(/*[[${error}]]*/'');
+    /*[/]*/
+    /*[# th:if="${errorDetails != null}"]*/
+    window.app.flashErrors.push(/*[[${errorDetails}]]*/'');
+    /*[/]*/
+    /*[# th:if="${success != null}"]*/
+    window.app.flashSuccess.push(/*[[${success}]]*/'');
+    /*[/]*/
+/*]]>*/
+</script>
+
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

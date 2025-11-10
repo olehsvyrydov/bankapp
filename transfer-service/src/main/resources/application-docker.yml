@@ -1,0 +1,50 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/bankdb
+    username: bank_user
+    password: bank_password
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    schemas: transfer
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://auth-server:9100
+      client:
+        registration:
+          transfer-service:
+            client-id: transfer-service
+            client-secret: transfer-secret
+            authorization-grant-type: client_credentials
+            scope: transfer.write,transfer.read,accounts.read,accounts.write,notifications.send,exchange.read
+        provider:
+          transfer-service:
+            token-uri: http://auth-server:9100/oauth2/token
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    hostname: transfer-service
+
+security:
+  internal-client:
+    registration-id: transfer-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

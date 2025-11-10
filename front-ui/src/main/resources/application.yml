@@ -1,0 +1,64 @@
+server:
+  port: 8090
+  servlet:
+    session:
+      cookie:
+        same-site: lax
+        secure: false
+      timeout: 30m
+
+spring:
+  application:
+    name: front-ui
+
+  main:
+    allow-circular-references: true
+
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+
+  # Internationalization
+  messages:
+    basename: "i18n/messages,ValidationMessages"
+    encoding: UTF-8
+    fallback-to-system-locale: false
+    cache-duration: -1
+
+  # WebFlux configuration for WebClient
+  webflux:
+    base-path: /
+
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: 5000
+            readTimeout: 10000
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka-server:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+logging:
+  level:
+    root: INFO
+    com.bank.frontend: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web.reactive.function.client: DEBUG
+    com.bank.auth: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    feign: DEBUG

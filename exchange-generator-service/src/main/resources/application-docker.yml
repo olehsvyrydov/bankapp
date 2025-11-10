@@ -1,0 +1,35 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://auth-server:9100
+      client:
+        registration:
+          exchange-generator-service:
+            client-id: exchange-generator-service
+            client-secret: exchange-generator-secret
+            authorization-grant-type: client_credentials
+            scope: exchange.generate,exchange.read
+        provider:
+          exchange-generator-service:
+            token-uri: http://auth-server:9100/oauth2/token
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    hostname: exchange-generator-service
+
+security:
+  internal-client:
+    registration-id: exchange-generator-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+

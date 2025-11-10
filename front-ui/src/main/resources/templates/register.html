@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:attr="lang=${#locale.language}">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="#{app.name} + ' - ' + #{register.title}">Bank Registration</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<div class="container">
+    <div class="language-bar">
+        <div th:replace="~{fragments/language-switch :: languageSelector}"></div>
+    </div>
+    <div class="register-box">
+        <h2 th:text="#{register.heading}">Create Account</h2>
+
+        <div th:if="${error}" class="alert alert-error">
+            <span th:text="${error}"></span>
+        </div>
+
+        <form id="registerForm"
+              th:action="@{/perform-register}"
+              th:object="${registerRequest}"
+              method="post"
+              th:attr="data-age-message=${#messages.msg('ui.validation.minAge', 18)}">
+            <div class="form-group">
+                <label th:for="*{username}" th:text="#{user.username} + ':'">Username:</label>
+                <input type="text" th:field="*{username}" class="form-control" required autofocus />
+            </div>
+
+            <div class="form-group">
+                <label th:for="*{firstName}" th:text="#{user.firstName} + ':'">First name:</label>
+                <input type="text" th:field="*{firstName}" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+                <label th:for="*{lastName}" th:text="#{user.lastName} + ':'">Last name:</label>
+                <input type="text" th:field="*{lastName}" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+                <label th:for="*{email}" th:text="#{user.email} + ':'">Email:</label>
+                <input type="email" th:field="*{email}" class="form-control" required th:placeholder="#{register.emailPlaceholder}" />
+            </div>
+
+            <div class="form-group">
+                <label th:for="*{birthDate}" th:text="#{user.birthDate} + ':'">Date of birth:</label>
+                <input type="date" th:field="*{birthDate}" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+                <label th:for="*{password}" th:text="#{user.password} + ':'">Password:</label>
+                <input type="password" th:field="*{password}" class="form-control" required minlength="6" />
+            </div>
+
+            <div class="form-group">
+                <label th:for="*{confirmPassword}" th:text="#{register.confirmPassword} + ':'">Confirm Password:</label>
+                <input type="password" th:field="*{confirmPassword}" class="form-control" required minlength="6" />
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" th:text="#{register.button}">Register</button>
+        </form>
+
+        <div class="login-link">
+            <p>
+                <span th:text="#{register.loginPrompt}">Already have an account?</span>
+                <a th:href="@{/login}" th:text="#{register.loginLink}">Login here</a>
+            </p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

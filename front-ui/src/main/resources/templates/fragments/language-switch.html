@@ -1,0 +1,9 @@
+<div th:fragment="languageSelector" class="language-selector">
+    <a th:href="${languageLinks['en']}" class="lang-link" th:classappend="${#locale.language == 'en'} ? ' active'">
+        EN
+    </a>
+    <span>|</span>
+    <a th:href="${languageLinks['ru']}" class="lang-link" th:classappend="${#locale.language == 'ru'} ? ' active'">
+        RU
+    </a>
+</div>

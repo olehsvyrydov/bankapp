@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.bank.common.config.OAuth2FeignConfig,\
+com.bank.common.exception.GlobalExceptionHandler

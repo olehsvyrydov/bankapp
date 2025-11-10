@@ -1,0 +1,38 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://auth-server:9100
+      client:
+        registration:
+          blocker-service:
+            client-id: blocker-service
+            client-secret: blocker-secret
+            authorization-grant-type: client_credentials
+            scope: blocker.check
+        provider:
+          blocker-service:
+            token-uri: http://auth-server:9100/oauth2/token
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    hostname: blocker-service
+
+security:
+  internal-client:
+    registration-id: blocker-service
+
+blocker:
+  max-amount-threshold: 1000
+  suspicious-probability: 0.7
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
