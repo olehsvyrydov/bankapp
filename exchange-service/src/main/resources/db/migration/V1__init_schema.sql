@@ -3,8 +3,8 @@ CREATE SCHEMA IF NOT EXISTS exchange;
 CREATE TABLE exchange.exchange_rates (
      id BIGSERIAL PRIMARY KEY,
      currency VARCHAR(10) UNIQUE NOT NULL,
-     buy_rate DOUBLE PRECISION NOT NULL,
-     sell_rate DOUBLE PRECISION NOT NULL,
+     buy_rate NUMERIC(38,2) NOT NULL DEFAULT 0,
+     sell_rate NUMERIC(38,2) NOT NULL DEFAULT 0,
      updated_at TIMESTAMP NOT NULL
 );
 

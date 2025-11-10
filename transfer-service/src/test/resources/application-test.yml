@@ -12,13 +12,15 @@ spring:
     enabled: false
     locations: classpath:db/migration
   cloud:
-    loadbalancer:
+    discovery:
       enabled: false
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: http://localhost
-EUREKA_CLIENT_ENABLED: false
+eureka:
+  client:
+    enabled: false
 spring.cloud.openfeign.circuitbreaker.enabled: false
 logging.level.org.springframework: WARN

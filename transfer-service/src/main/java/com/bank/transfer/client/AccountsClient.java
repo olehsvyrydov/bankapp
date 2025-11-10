@@ -12,7 +12,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.List;
 
 
-@FeignClient(name = "accounts-service", url = "${clients.gateway-service.url}")
+@FeignClient(
+    name = "gateway-service",
+    contextId = "accountsClient",
+    fallbackFactory = AccountsClientFallbackFactory.class)
 public interface AccountsClient {
 
     @GetMapping("/api/accounts/bank-accounts/{id}")

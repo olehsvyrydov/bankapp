@@ -16,6 +16,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,7 +52,7 @@ class TransferControllerTest {
         transferRequest = TransferRequest.builder()
             .fromBankAccountId(123L)
             .toBankAccountId(456L)
-            .amount(100.0)
+            .amount(BigDecimal.valueOf(100.0))
             .build();
 
         when(session.getAttribute("username")).thenReturn("testuser");
@@ -99,7 +100,7 @@ class TransferControllerTest {
             TransferRequest sameAccountRequest = TransferRequest.builder()
                 .fromBankAccountId(123L)
                 .toBankAccountId(123L)
-                .amount(100.0)
+                .amount(BigDecimal.valueOf(100.0))
                 .build();
             when(bindingResult.hasErrors()).thenReturn(false);
 
@@ -256,7 +257,7 @@ class TransferControllerTest {
             TransferRequest sameAccountRequest = TransferRequest.builder()
                 .fromBankAccountId(123L)
                 .toBankAccountId(123L)
-                .amount(100.0)
+                .amount(BigDecimal.valueOf(100.0))
                 .build();
             when(bindingResult.hasErrors()).thenReturn(false);
 

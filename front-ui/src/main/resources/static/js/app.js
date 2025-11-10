@@ -187,8 +187,8 @@ function refreshExchangeRates() {
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td>${rate.currency}</td>
-                        <td>${rate.buyRate.toFixed(4)}</td>
-                        <td>${rate.sellRate.toFixed(4)}</td>
+                        <td>${rate.buyRate.toFixed(2)}</td>
+                        <td>${rate.sellRate.toFixed(2)}</td>
                     `;
                     tbody.appendChild(row);
                 });

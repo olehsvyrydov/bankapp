@@ -6,7 +6,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
 
-@FeignClient(name = "accounts-service", url = "${clients.gateway-service.url}", fallback = AccountsClientFallback.class)
+@FeignClient(name = "gateway-service", contextId = "accountsClient", fallback = AccountsClientFallback.class)
 public interface AccountsClient {
 
     @GetMapping("/api/accounts/me")

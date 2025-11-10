@@ -4,31 +4,29 @@ import com.bank.common.dto.contracts.accounts.AccountDTO;
 import com.bank.common.dto.contracts.accounts.BankAccountDTO;
 import com.bank.accounts.entity.Account;
 import com.bank.accounts.entity.BankAccount;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+import org.mapstruct.factory.Mappers;
 
-public class AccountMapper {
+import java.util.List;
 
-    private AccountMapper(){}
+import static org.mapstruct.MappingConstants.ComponentModel.*;
 
-    public static AccountDTO toDTO(Account account) {
-        return AccountDTO.builder()
-            .id(account.getId())
-            .username(account.getUsername())
-            .firstName(account.getFirstName())
-            .lastName(account.getLastName())
-            .email(account.getEmail())
-            .birthDate(account.getBirthDate())
-            .bankAccounts(account.getBankAccounts().stream()
-                .map(AccountMapper::toBankAccountDTO)
-                .toList())
-            .build();
-    }
+@Mapper(componentModel = SPRING)
+public interface AccountMapper {
+    AccountMapper INSTANCE = Mappers.getMapper(AccountMapper.class);
 
-    public static BankAccountDTO toBankAccountDTO(BankAccount bankAccount) {
-        return BankAccountDTO.builder()
-            .id(bankAccount.getId())
-            .currency(bankAccount.getCurrency())
-            .balance(bankAccount.getBalance())
-            .accountUsername(bankAccount.getAccount().getUsername())
-            .build();
+    @Mapping(target = "bankAccounts", source = "bankAccounts", qualifiedByName = "mpsToListBankAccountsDTO")
+    AccountDTO toDTO(Account account);
+
+    @Mapping(target = "accountUsername", source = "account.username")
+    BankAccountDTO toBankAccountDTO(BankAccount bankAccount);
+
+    @Named("mpsToListBankAccountsDTO")
+    default List<BankAccountDTO> toListBankAccountsDTO(List<BankAccount> bankAccounts) {
+        return bankAccounts.stream()
+            .map(this::toBankAccountDTO)
+            .toList();
     }
 }

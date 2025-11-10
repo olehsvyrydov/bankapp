@@ -43,9 +43,6 @@ security:
   internal-client:
     registration-id: cash-service
 
-clients:
-  gateway-service:
-    url: http://gateway-service:8080
 management:
   endpoints:
     web:

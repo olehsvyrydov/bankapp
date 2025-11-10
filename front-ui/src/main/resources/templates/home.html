@@ -277,8 +277,8 @@
                 <tbody>
                 <tr th:each="rate : ${exchangeRates}">
                     <td th:text="${rate.currency}"></td>
-                    <td th:text="${#numbers.formatDecimal(rate.sellRate, 1, 4)}"></td>
-                    <td th:text="${rate.buyRate != null && rate.buyRate != 0 ? #numbers.formatDecimal(1 / rate.buyRate, 1, 4) : 'N/A'}"></td>
+                    <td th:text="${#numbers.formatDecimal(rate.buyRate, 1, 2)}"></td>
+                    <td th:text="${#numbers.formatDecimal(rate.sellRate, 1, 2)}"></td>
                 </tr>
                 </tbody>
             </table>

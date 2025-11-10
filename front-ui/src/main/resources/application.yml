@@ -38,13 +38,6 @@ spring:
             connectTimeout: 5000
             readTimeout: 10000
 
-# Auth server configuration
-clients:
-  auth-server:
-    url: http://auth-server:9100
-  gateway-service:
-    url: http://gateway-service:8080
-
 eureka:
   client:
     service-url:

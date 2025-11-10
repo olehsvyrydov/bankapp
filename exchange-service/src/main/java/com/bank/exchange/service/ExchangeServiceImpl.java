@@ -6,6 +6,10 @@ import com.bank.exchange.repository.ExchangeRateRepository;
 import com.bank.common.exception.BusinessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,7 +35,7 @@ public class ExchangeServiceImpl implements ExchangeService {
     }
 
     @Override
-    public void updateRate(String currency, Double buyRate, Double sellRate) {
+    public void updateRate(String currency, BigDecimal buyRate, BigDecimal sellRate) {
         ExchangeRate rate = exchangeRateRepository.findByCurrency(currency)
             .orElse(ExchangeRate.builder().currency(currency).build());
 
@@ -41,19 +45,19 @@ public class ExchangeServiceImpl implements ExchangeService {
     }
 
     @Override
-    public Double convert(Double amount, String fromCurrency, String toCurrency) {
+    public BigDecimal convert(BigDecimal amount, String fromCurrency, String toCurrency) {
         if (fromCurrency.equals(toCurrency)) {
             return amount;
         }
 
         // Convert to RUB first
         // When converting FROM foreign currency TO RUB: Bank BUYS foreign currency at BUY rate
-        Double rubAmount = amount;
+        BigDecimal rubAmount = amount;
         if (!"RUB".equals(fromCurrency)) {
             ExchangeRate fromRate = exchangeRateRepository.findByCurrency(fromCurrency)
                 .orElseThrow(() -> new BusinessException("Exchange rate not found for " + fromCurrency));
             // Bank buys foreign currency at buy rate
-            rubAmount = amount * fromRate.getBuyRate();
+            rubAmount = amount.multiply(fromRate.getBuyRate());
         }
 
         // Convert from RUB to target currency
@@ -62,7 +66,7 @@ public class ExchangeServiceImpl implements ExchangeService {
             ExchangeRate toRate = exchangeRateRepository.findByCurrency(toCurrency)
                 .orElseThrow(() -> new BusinessException("Exchange rate not found for " + toCurrency));
             // Bank sells foreign currency at sell rate
-            return rubAmount / toRate.getSellRate();
+            return rubAmount.divide(toRate.getSellRate(), new MathContext(2, RoundingMode.HALF_UP));
         }
 
         return rubAmount;

@@ -27,9 +27,6 @@ security:
   internal-client:
     registration-id: exchange-generator-service
 
-clients:
-  gateway-service:
-    url: http://gateway-service:8080
 management:
   endpoints:
     web:

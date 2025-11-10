@@ -17,6 +17,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.validation.SmartValidator;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -55,13 +56,13 @@ class CashControllerTest {
     void setUp() {
         depositRequest = CashOperationRequest.builder()
             .bankAccountId(123L)
-            .amount(100.0)
+            .amount(BigDecimal.valueOf(100.0))
             .type("DEPOSIT")
             .build();
 
         withdrawRequest = CashOperationRequest.builder()
             .bankAccountId(123L)
-            .amount(50.0)
+            .amount(BigDecimal.valueOf(50.0))
             .type("WITHDRAWAL")
             .build();
 
@@ -209,7 +210,7 @@ class CashControllerTest {
             // Given
             CashOperationRequest request = CashOperationRequest.builder()
                 .bankAccountId(123L)
-                .amount(100.0)
+                .amount(BigDecimal.valueOf(100.0))
                 .build();
             when(bindingResult.hasErrors()).thenReturn(false);
             doNothing().when(cashServiceClient).deposit(any());
@@ -314,7 +315,7 @@ class CashControllerTest {
             // Given
             CashOperationRequest request = CashOperationRequest.builder()
                 .bankAccountId(123L)
-                .amount(50.0)
+                .amount(BigDecimal.valueOf(50.0))
                 .build();
             when(bindingResult.hasErrors()).thenReturn(false);
             doNothing().when(cashServiceClient).withdraw(any());

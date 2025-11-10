@@ -6,8 +6,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @FeignClient(
-    name = "notifications-service", url = "${clients.gateway-service.url}",
-    fallback = NotificationClientFallback.class
+    name = "gateway-service",
+    contextId = "notificationClient",
+    fallbackFactory = NotificationClientFallbackFactory.class
 )
 public interface NotificationClient {
 

@@ -6,6 +6,8 @@ import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 
+import java.math.BigDecimal;
+
 @Slf4j
 public abstract class AbstractRateGeneratorService implements RateGeneratorService
 {
@@ -20,7 +22,7 @@ public abstract class AbstractRateGeneratorService implements RateGeneratorServi
         this.discoveryClient = discoveryClient;
     }
 
-    protected void updateRate(String currency, Double buyRate, Double sellRate) {
+    protected void updateRate(String currency, BigDecimal buyRate, BigDecimal sellRate) {
         try {
             ExchangeRateDTO request = ExchangeRateDTO.builder()
                 .currency(currency)

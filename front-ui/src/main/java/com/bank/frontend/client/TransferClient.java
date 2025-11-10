@@ -7,7 +7,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "transfer-service", url = "${clients.gateway-service.url}")
+@FeignClient(name = "gateway-service", contextId = "transferClient")
 public interface TransferClient {
 
     @PostMapping("/api/transfers")

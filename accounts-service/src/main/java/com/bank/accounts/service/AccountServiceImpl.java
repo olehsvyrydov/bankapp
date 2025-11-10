@@ -13,24 +13,29 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
 @Slf4j
 public class AccountServiceImpl implements AccountService {
 
+    public static final String ACCOUNT_NOT_FOUND_MESSAGE = "Account not found";
+    public static final String BANK_ACCOUNT_NOT_FOUND_MESSAGE = "Bank account not found";
     private final AccountRepository accountRepository;
     private final BankAccountRepository bankAccountRepository;
     private final NotificationClient notificationClient;
+    private final AccountMapper accountMapper;
 
     public AccountServiceImpl(AccountRepository accountRepository,
         BankAccountRepository bankAccountRepository,
-        NotificationClient notificationClient) {
+        NotificationClient notificationClient,
+        AccountMapper accountMapper) {
         this.accountRepository = accountRepository;
         this.bankAccountRepository = bankAccountRepository;
         this.notificationClient = notificationClient;
+        this.accountMapper = accountMapper;
     }
 
     @Override
@@ -53,7 +58,7 @@ public class AccountServiceImpl implements AccountService {
         BankAccount bankAccount = BankAccount.builder()
             .account(account)
             .currency("RUB")
-            .balance(0.0)
+            .balance(BigDecimal.ZERO)
             .build();
 
         bankAccountRepository.save(bankAccount);
@@ -65,15 +70,15 @@ public class AccountServiceImpl implements AccountService {
             .type("INFO")
             .build());
 
-        return AccountMapper.toDTO(account);
+        return accountMapper.toDTO(account);
     }
 
     @Override
     @Transactional(readOnly = true)
     public AccountDTO getAccountByUsername(String username) {
         Account account = accountRepository.findByUsername(username)
-            .orElseThrow(() -> new BusinessException("Account not found"));
-        return AccountMapper.toDTO(account);
+            .orElseThrow(() -> new BusinessException(ACCOUNT_NOT_FOUND_MESSAGE));
+        return accountMapper.toDTO(account);
     }
 
     @Override
@@ -81,13 +86,13 @@ public class AccountServiceImpl implements AccountService {
     public AccountDTO getAccountByEmail(String email) {
         Account account = accountRepository.findByEmail(email)
             .orElseThrow(() -> new BusinessException("Account not found with email: " + email));
-        return AccountMapper.toDTO(account);
+        return accountMapper.toDTO(account);
     }
 
     @Override
     public AccountDTO updateAccount(String username, UpdateAccountRequest request) {
         Account account = accountRepository.findByUsername(username)
-            .orElseThrow(() -> new BusinessException("Account not found"));
+            .orElseThrow(() -> new BusinessException(ACCOUNT_NOT_FOUND_MESSAGE));
 
         account.setFirstName(request.getFirstName());
         account.setLastName(request.getLastName());
@@ -102,17 +107,17 @@ public class AccountServiceImpl implements AccountService {
             .type("INFO")
             .build());
 
-        return AccountMapper.toDTO(account);
+        return accountMapper.toDTO(account);
     }
 
     @Override
     public void deleteAccount(String username) {
         Account account = accountRepository.findByUsername(username)
-            .orElseThrow(() -> new BusinessException("Account not found"));
+            .orElseThrow(() -> new BusinessException(ACCOUNT_NOT_FOUND_MESSAGE));
 
         // Check if any bank account has non-zero balance
         boolean hasBalance = account.getBankAccounts().stream()
-            .anyMatch(ba -> ba.getBalance() > 0);
+            .anyMatch(ba -> ba.getBalance().compareTo(BigDecimal.ZERO) > 0);
 
         if (hasBalance) {
             throw new BusinessException("Cannot delete account with non-zero balance");
@@ -129,7 +134,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public BankAccountDTO createBankAccount(String username, CreateBankAccountRequest request) {
         Account account = accountRepository.findByUsername(username)
-            .orElseThrow(() -> new BusinessException("Account not found"));
+            .orElseThrow(() -> new BusinessException(ACCOUNT_NOT_FOUND_MESSAGE));
 
         // Check if account already has a bank account with this currency
         boolean currencyExists = account.getBankAccounts().stream()
@@ -142,7 +147,7 @@ public class AccountServiceImpl implements AccountService {
         BankAccount bankAccount = BankAccount.builder()
             .account(account)
             .currency(request.getCurrency())
-            .balance(0.0)
+            .balance(BigDecimal.ZERO)
             .build();
 
         bankAccount = bankAccountRepository.save(bankAccount);
@@ -153,32 +158,30 @@ public class AccountServiceImpl implements AccountService {
             .type("INFO")
             .build());
 
-        return AccountMapper.toBankAccountDTO(bankAccount);
+        return accountMapper.toBankAccountDTO(bankAccount);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<BankAccountDTO> getBankAccountsByUsername(String username) {
         List<BankAccount> bankAccounts = bankAccountRepository.findByAccountUsername(username);
-        return bankAccounts.stream()
-            .map(AccountMapper::toBankAccountDTO)
-            .collect(Collectors.toList());
+        return accountMapper.toListBankAccountsDTO(bankAccounts);
     }
 
     @Override
     @Transactional(readOnly = true)
     public BankAccountDTO getBankAccountById(Long id, String username) {
         BankAccount bankAccount = bankAccountRepository.findByIdAndAccountUsername(id, username)
-            .orElseThrow(() -> new BusinessException("Bank account not found"));
-        return AccountMapper.toBankAccountDTO(bankAccount);
+            .orElseThrow(() -> new BusinessException(BANK_ACCOUNT_NOT_FOUND_MESSAGE));
+        return accountMapper.toBankAccountDTO(bankAccount);
     }
 
     @Override
     public void deleteBankAccount(Long id, String username) {
         BankAccount bankAccount = bankAccountRepository.findByIdAndAccountUsername(id, username)
-            .orElseThrow(() -> new BusinessException("Bank account not found"));
+            .orElseThrow(() -> new BusinessException(BANK_ACCOUNT_NOT_FOUND_MESSAGE));
 
-        if (bankAccount.getBalance() > 0) {
+        if (bankAccount.getBalance().compareTo(BigDecimal.ZERO) > 0) {
             throw new BusinessException("Cannot delete bank account with non-zero balance");
         }
 
@@ -193,30 +196,20 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public BankAccountDTO updateBalance(UpdateBalanceRequest request) {
         BankAccount bankAccount = bankAccountRepository.findById(request.getBankAccountId())
-            .orElseThrow(() -> new BusinessException("Bank account not found"));
+            .orElseThrow(() -> new BusinessException(BANK_ACCOUNT_NOT_FOUND_MESSAGE));
 
-        if ("ADD".equals(request.getOperation())) {
-            double newBalance = bankAccount.getBalance() + request.getAmount();
-            bankAccount.setBalance(Math.round(newBalance * 100.0) / 100.0);
-        } else if ("SUBTRACT".equals(request.getOperation())) {
-            if (bankAccount.getBalance() < request.getAmount()) {
-                throw new BusinessException("Insufficient balance");
-            }
-            double newBalance = bankAccount.getBalance() - request.getAmount();
-            bankAccount.setBalance(Math.round(newBalance * 100.0) / 100.0);
-        } else {
-            throw new BusinessException("Invalid operation: " + request.getOperation());
-        }
+        BigDecimal newBalance = request.getOperation().apply(bankAccount.getBalance(), request.getAmount());
+        bankAccount.setBalance(newBalance);
 
         bankAccount = bankAccountRepository.save(bankAccount);
-        return AccountMapper.toBankAccountDTO(bankAccount);
+        return accountMapper.toBankAccountDTO(bankAccount);
     }
 
     @Override
     @Transactional(readOnly = true)
     public BankAccountDTO getBankAccountByIdPublic(Long id) {
         BankAccount bankAccount = bankAccountRepository.findById(id)
-            .orElseThrow(() -> new BusinessException("Bank account not found"));
-        return AccountMapper.toBankAccountDTO(bankAccount);
+            .orElseThrow(() -> new BusinessException(BANK_ACCOUNT_NOT_FOUND_MESSAGE));
+        return accountMapper.toBankAccountDTO(bankAccount);
     }
 }

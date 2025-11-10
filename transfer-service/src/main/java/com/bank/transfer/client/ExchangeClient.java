@@ -6,14 +6,15 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-import java.util.Map;
+import java.math.BigDecimal;
 
 @FeignClient(
-    name = "exchange-service", url = "${clients.gateway-service.url}",
-    fallback = ExchangeClientFallback.class
+    name = "gateway-service",
+    contextId = "exchangeClient",
+    fallbackFactory = ExchangeClientFallbackFactory.class
 )
 public interface ExchangeClient {
 
     @PostMapping("/api/exchange/convert")
-    ApiResponse<Double> convert(@RequestBody ConversionRequest request);
+    ApiResponse<BigDecimal> convert(@RequestBody ConversionRequest request);
 }

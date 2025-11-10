@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -18,7 +20,7 @@ public class CashOperationRequest {
 
     @NotNull(message = "{validation.amount.required}")
     @Positive(message = "{validation.amount.positive}")
-    private Double amount;
+    private BigDecimal amount;
 
     private String type; // DEPOSIT or WITHDRAWAL
 }

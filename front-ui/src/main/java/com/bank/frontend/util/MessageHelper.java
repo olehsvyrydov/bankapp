@@ -121,7 +121,7 @@ public class MessageHelper {
                         JsonNode validationErrors = node.get("validationErrors");
                         if (validationErrors != null && validationErrors.isObject()) {
                             StringBuilder errors = new StringBuilder();
-                            validationErrors.fields().forEachRemaining(entry -> {
+                            validationErrors.propertyStream().forEach(entry -> {
                                 if (!errors.isEmpty()) {
                                     errors.append(", ");
                                 }

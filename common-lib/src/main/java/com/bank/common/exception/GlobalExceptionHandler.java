@@ -1,8 +1,10 @@
 package com.bank.common.exception;
 
 import com.bank.common.dto.ErrorResponse;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -11,6 +13,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -66,6 +69,27 @@ public class GlobalExceptionHandler {
             .validationErrors(errors)
             .build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidEnum(HttpMessageNotReadableException ex) {
+        String message = "Invalid operation value";
+
+        if (ex.getCause() instanceof InvalidFormatException cause && cause.getTargetType() != null && cause.getTargetType().isEnum()) {
+                Object[] enumValues = cause.getTargetType().getEnumConstants();
+                message = String.format("Invalid operation value. Allowed values: %s",
+                    Arrays.toString(enumValues));
+            }
+
+        return ResponseEntity
+            .badRequest()
+            .body(ErrorResponse.builder()
+                .error("Validation Error")
+                .message(message)
+                .status(400)
+                .timestamp(LocalDateTime.now())
+                .build());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

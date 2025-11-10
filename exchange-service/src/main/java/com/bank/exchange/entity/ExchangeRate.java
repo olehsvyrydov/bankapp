@@ -2,6 +2,8 @@ package com.bank.exchange.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -19,10 +21,10 @@ public class ExchangeRate {
     private String currency;
 
     @Column(nullable = false)
-    private Double buyRate;
+    private BigDecimal buyRate;
 
     @Column(nullable = false)
-    private Double sellRate;
+    private BigDecimal sellRate;
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;

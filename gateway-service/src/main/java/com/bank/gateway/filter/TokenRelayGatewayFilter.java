@@ -28,8 +28,8 @@ public class TokenRelayGatewayFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         return ReactiveSecurityContextHolder.getContext()
             .map(SecurityContext::getAuthentication)
-            .filter(auth -> auth instanceof JwtAuthenticationToken)
-            .map(auth -> (JwtAuthenticationToken) auth)
+            .filter(JwtAuthenticationToken.class::isInstance)
+            .map(JwtAuthenticationToken.class::cast)
             .map(JwtAuthenticationToken::getToken)
             .map(Jwt::getTokenValue)
             .map(token -> {

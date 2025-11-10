@@ -67,7 +67,7 @@ services:
       dockerfile: Dockerfile
     container_name: gateway-service
     ports:
-      - "8080:8080"
+      - "8100:8100"
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -81,7 +81,7 @@ services:
     networks:
       - bank-network
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8100/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 5

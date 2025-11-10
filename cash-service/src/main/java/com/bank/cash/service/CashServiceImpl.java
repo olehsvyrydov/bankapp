@@ -3,6 +3,11 @@ package com.bank.cash.service;
 import com.bank.cash.client.AccountsClient;
 import com.bank.cash.client.BlockerClient;
 import com.bank.cash.client.NotificationClient;
+import com.bank.common.dto.contracts.accounts.BankAccountDTO;
+import com.bank.common.dto.contracts.accounts.BankOperation;
+import com.bank.common.dto.contracts.accounts.UpdateBalanceRequest;
+import com.bank.common.dto.contracts.blocker.BlockCheckRequest;
+import com.bank.common.dto.contracts.blocker.BlockCheckResponse;
 import com.bank.common.dto.contracts.cash.CashOperationRequest;
 import com.bank.common.dto.contracts.cash.CashOperationResponse;
 import com.bank.common.dto.contracts.notifications.NotificationRequest;
@@ -16,9 +21,10 @@ import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.math.BigDecimal;
 
-import java.util.HashMap;
-import java.util.Map;
+import static com.bank.common.dto.contracts.accounts.BankOperation.ADD;
+import static com.bank.common.dto.contracts.accounts.BankOperation.SUBTRACT;
 
 @Service
 @Transactional
@@ -48,19 +54,20 @@ public class CashServiceImpl implements CashService
     public CashOperationResponse processOperation(CashOperationRequest request, String username)
     {
         try {
-            Map<String, Object> bankAccount = fetchBankAccount(request.getBankAccountId());
+            BankAccountDTO bankAccount = fetchBankAccount(request.getBankAccountId());
 
-            String currency = (String) bankAccount.get("currency");
-            double currentBalance = ((Number) bankAccount.get("balance")).doubleValue();
+            String currency = bankAccount.getCurrency();
+            BigDecimal currentBalance = bankAccount.getBalance();
 
             // Check with blocker
-            Map<String, Object> blockerRequest = new HashMap<>();
-            blockerRequest.put("username", username);
-            blockerRequest.put("amount", request.getAmount());
-            blockerRequest.put("type", request.getType());
+            BlockCheckRequest blockerRequest = BlockCheckRequest.builder()
+                .username(username)
+                .amount(request.getAmount())
+                .type(request.getType())
+                .build();
             log.debug("Blocker request: {}", blockerRequest);
-            Map<String, Object> blockerResponse = blockerClient.checkOperation(blockerRequest);
-            boolean isBlocked = Boolean.TRUE.equals(blockerResponse.get("blocked"));
+            BlockCheckResponse blockerResponse = blockerClient.checkOperation(blockerRequest);
+            boolean isBlocked = blockerResponse.blocked();
             log.debug("Blocker response: {}", blockerResponse);
             if (isBlocked)
             {
@@ -85,20 +92,21 @@ public class CashServiceImpl implements CashService
 
             // Validate withdrawal
             if (request.getType() != null && request.getType().toUpperCase().contains("WITHDRAW")
-                && currentBalance < request.getAmount())
+                && currentBalance.compareTo(request.getAmount()) < 0)
             {
                 throw new BusinessException("Insufficient balance");
             }
 
             // Update balance
-            String operation = "DEPOSIT".equalsIgnoreCase(request.getType()) ? "ADD" : "SUBTRACT";
-            Map<String, Object> updateRequest = new HashMap<>();
-            updateRequest.put("bankAccountId", request.getBankAccountId());
-            updateRequest.put("amount", request.getAmount());
-            updateRequest.put("operation", operation);
+            BankOperation operation = "DEPOSIT".equalsIgnoreCase(request.getType()) ? ADD : SUBTRACT;
+            UpdateBalanceRequest updateRequest = UpdateBalanceRequest.builder()
+                .bankAccountId(request.getBankAccountId())
+                .amount(request.getAmount())
+                .operation(operation)
+                .build();
 
-            Map<String, Object> updatedAccount = updateBalance(updateRequest, operation);
-            Double newBalance = ((Number) updatedAccount.get("balance")).doubleValue();
+            BankAccountDTO updatedAccount = updateBalance(updateRequest, operation);
+            BigDecimal newBalance = updatedAccount.getBalance();
 
             // Save transaction
             Transaction transaction = Transaction.builder()
@@ -133,16 +141,16 @@ public class CashServiceImpl implements CashService
         }
     }
 
-    private Map<String, Object> fetchBankAccount(Long bankAccountId)
+    private BankAccountDTO fetchBankAccount(Long bankAccountId)
     {
         try
         {
-            ApiResponse<Map<String, Object>> response = accountsClient.getBankAccount(bankAccountId);
+            ApiResponse<BankAccountDTO> response = accountsClient.getBankAccount(bankAccountId);
             if (!response.isSuccess())
             {
                 throw new BusinessException(response.getMessage());
             }
-            Map<String, Object> bankAccount = response.getData();
+            BankAccountDTO bankAccount = response.getData();
             if (bankAccount == null)
             {
                 throw new BusinessException("Bank account not found");
@@ -155,11 +163,11 @@ public class CashServiceImpl implements CashService
         }
     }
 
-    private Map<String, Object> updateBalance(Map<String, Object> request, String operation)
+    private BankAccountDTO updateBalance(UpdateBalanceRequest request, BankOperation operation)
     {
         try
         {
-            ApiResponse<Map<String, Object>> response = accountsClient.updateBalance(request);
+            ApiResponse<BankAccountDTO> response = accountsClient.updateBalance(request);
             if (!response.isSuccess())
             {
                 throw new BusinessException("Failed to update balance: " + response.getMessage());
@@ -187,6 +195,7 @@ public class CashServiceImpl implements CashService
             }
             catch (Exception ignored)
             {
+                // Ignore parsing errors
             }
         }
         return new BusinessException(message);

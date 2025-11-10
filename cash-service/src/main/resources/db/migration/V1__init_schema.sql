@@ -4,7 +4,7 @@ CREATE TABLE cash.transactions (
    id BIGSERIAL PRIMARY KEY,
    bank_account_id BIGINT NOT NULL,
    type VARCHAR(20) NOT NULL,
-   amount DOUBLE PRECISION NOT NULL,
+   amount NUMERIC(38,2) NOT NULL DEFAULT 0,
    currency VARCHAR(10) NOT NULL,
    status VARCHAR(20) NOT NULL,
    description TEXT,

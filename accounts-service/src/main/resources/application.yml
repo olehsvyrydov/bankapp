@@ -77,7 +77,3 @@ security:
   internal-client:
     registration-id: accounts-service
     forward-user-token: false
-
-clients:
-  gateway-service:
-    url: http://gateway-service:8080

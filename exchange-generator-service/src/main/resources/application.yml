@@ -39,9 +39,6 @@ security:
     registration-id: exchange-generator-service
     forward-user-token: false
 
-clients:
-  gateway-service:
-    url: http://gateway-service:8080
 management:
   endpoints:
     web:

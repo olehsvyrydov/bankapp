@@ -66,10 +66,6 @@ security:
     registration-id: transfer-service
     forward-user-token: false
 
-clients:
-  gateway-service:
-    url: http://gateway-service:8080
-
 logging:
   level:
     com.bank.common.config.OAuth2FeignConfig: DEBUG

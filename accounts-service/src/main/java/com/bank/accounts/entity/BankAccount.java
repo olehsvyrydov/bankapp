@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -30,7 +31,7 @@ public class BankAccount {
 
     @Column(nullable = false)
     @Builder.Default
-    private Double balance = 0.0;
+    private BigDecimal balance = BigDecimal.ZERO;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

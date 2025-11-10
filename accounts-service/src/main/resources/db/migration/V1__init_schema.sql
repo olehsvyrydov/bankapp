@@ -15,7 +15,7 @@ CREATE TABLE accounts.bank_accounts (
     id BIGSERIAL PRIMARY KEY,
     account_id BIGINT NOT NULL REFERENCES accounts.accounts(id) ON DELETE CASCADE,
     currency VARCHAR(10) NOT NULL,
-    balance DOUBLE PRECISION NOT NULL DEFAULT 0,
+    balance NUMERIC(38,2) NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     CONSTRAINT unique_account_currency UNIQUE (account_id, currency)

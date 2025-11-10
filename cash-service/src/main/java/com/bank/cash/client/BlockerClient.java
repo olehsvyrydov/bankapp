@@ -1,18 +1,18 @@
 package com.bank.cash.client;
 
+import com.bank.common.dto.contracts.blocker.BlockCheckRequest;
+import com.bank.common.dto.contracts.blocker.BlockCheckResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-import java.util.Map;
-
 @FeignClient(
-    name = "blocker-service",
-    url = "${clients.gateway-service.url}",
-    fallback = BlockerClientFallback.class
+    name = "gateway-service",
+    contextId = "blockerClient",
+    fallbackFactory = BlockerClientFallbackFactory.class
 )
 public interface BlockerClient {
 
     @PostMapping("/api/blocker/check")
-    Map<String, Object> checkOperation(@RequestBody Map<String, Object> request);
+    BlockCheckResponse checkOperation(@RequestBody BlockCheckRequest request);
 }

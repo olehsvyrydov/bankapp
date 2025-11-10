@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8100
 
 spring:
   application:
@@ -21,47 +21,49 @@ spring:
           issuer-uri: http://auth-server:9100
   cloud:
     gateway:
-      default-filters:
-        - PreserveHostHeader
-      routes:
-        - id: accounts-service
-          uri: lb://accounts-service
-          predicates:
-            - Path=/api/accounts/**
-        - id: cash-service
-          uri: lb://cash-service
-          predicates:
-            - Path=/api/cash/**
-        - id: transfer-service
-          uri: lb://transfer-service
-          predicates:
-            - Path=/api/transfers/**
-        - id: exchange-service
-          uri: lb://exchange-service
-          predicates:
-            - Path=/api/exchange/**
-        - id: exchange-service-generator
-          uri: lb://exchange-generator-service
-          predicates:
-            - Path=/api/exchange/generate/**
-        - id: notifications-service
-          uri: lb://notifications-service
-          predicates:
-            - Path=/api/notifications/**
-        - id: blocker-service
-          uri: lb://blocker-service
-          predicates:
-            - Path=/api/blocker/**
-      discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: true
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowed-origins: "*"
-            allowed-methods: "*"
-            allowed-headers: "*"
+      server:
+        webflux:
+          default-filters:
+            - PreserveHostHeader
+          routes:
+            - id: accounts-service
+              uri: lb://accounts-service
+              predicates:
+                - Path=/api/accounts/**
+            - id: cash-service
+              uri: lb://cash-service
+              predicates:
+                - Path=/api/cash/**
+            - id: transfer-service
+              uri: lb://transfer-service
+              predicates:
+                - Path=/api/transfers/**
+            - id: exchange-service
+              uri: lb://exchange-service
+              predicates:
+                - Path=/api/exchange/**
+            - id: exchange-service-generator
+              uri: lb://exchange-generator-service
+              predicates:
+                - Path=/api/exchange/generate/**
+            - id: notifications-service
+              uri: lb://notifications-service
+              predicates:
+                - Path=/api/notifications/**
+            - id: blocker-service
+              uri: lb://blocker-service
+              predicates:
+                - Path=/api/blocker/**
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowed-origins: "*"
+                allowed-methods: "*"
+                allowed-headers: "*"
 
 eureka:
   client:

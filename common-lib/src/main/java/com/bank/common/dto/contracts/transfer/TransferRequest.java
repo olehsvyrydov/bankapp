@@ -3,6 +3,8 @@ package com.bank.common.dto.contracts.transfer;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -19,5 +21,5 @@ public class TransferRequest {
 
     @NotNull(message = "{validation.amount.required}")
     @Positive(message = "{validation.amount.positive}")
-    private Double amount;
+    private BigDecimal amount;
 }

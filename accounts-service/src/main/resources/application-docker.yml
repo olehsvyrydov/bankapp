@@ -42,7 +42,3 @@ eureka:
 security:
   internal-client:
     registration-id: accounts-service
-
-clients:
-  gateway-service:
-    url: http://gateway-service:8080

@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 
 @FeignClient(
-    name = "blocker-service",
-    url = "${clients.gateway-service.url}",
-    fallback = BlockerClientFallback.class
+    name = "gateway-service",
+    contextId = "blockerClient",
+    fallbackFactory = BlockerClientFallbackFactory.class
 )
 public interface BlockerClient {
 

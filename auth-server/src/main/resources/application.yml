@@ -56,7 +56,3 @@ jwt:
 
 security:
   issuer: ${SECURITY_ISSUER:http://auth-server:9100}
-
-clients:
-  gateway-service:
-    url: http://gateway-service:8080

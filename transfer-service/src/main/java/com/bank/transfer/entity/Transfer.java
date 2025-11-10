@@ -2,6 +2,8 @@ package com.bank.transfer.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -22,7 +24,7 @@ public class Transfer {
     private Long toBankAccountId;
 
     @Column(nullable = false)
-    private Double amount;
+    private BigDecimal amount;
 
     @Column(nullable = false)
     private String fromCurrency;
@@ -30,7 +32,7 @@ public class Transfer {
     @Column(nullable = false)
     private String toCurrency;
 
-    private Double convertedAmount;
+    private BigDecimal convertedAmount;
 
     @Column(nullable = false)
     private String status;

@@ -6,6 +6,8 @@ import com.bank.exchange.service.ExchangeService;
 import com.bank.common.dto.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -31,8 +33,8 @@ public class ExchangeController {
     }
 
     @PostMapping("/convert")
-    public ResponseEntity<ApiResponse<Double>> convert(@RequestBody ConversionRequest request) {
-        Double result = exchangeService.convert(
+    public ResponseEntity<ApiResponse<BigDecimal>> convert(@RequestBody ConversionRequest request) {
+        BigDecimal result = exchangeService.convert(
             request.getAmount(),
             request.getFromCurrency(),
             request.getToCurrency());

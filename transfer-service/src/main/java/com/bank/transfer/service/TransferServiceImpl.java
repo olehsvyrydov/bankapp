@@ -19,7 +19,11 @@ import feign.FeignException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
+
+import static com.bank.common.dto.contracts.accounts.BankOperation.ADD;
+import static com.bank.common.dto.contracts.accounts.BankOperation.SUBTRACT;
 
 @Service
 @Transactional
@@ -67,10 +71,10 @@ public class TransferServiceImpl implements TransferService {
             }
 
             String fromCurrency = fromAccount.getCurrency();
-            double fromBalance = fromAccount.getBalance();
+            BigDecimal fromBalance = fromAccount.getBalance();
 
             // Check balance
-            if (fromBalance < request.getAmount()) {
+            if (fromBalance.compareTo(request.getAmount()) < 0) {
                 throw new BusinessException("Insufficient balance");
             }
 
@@ -156,7 +160,7 @@ public class TransferServiceImpl implements TransferService {
             }
 
             // Convert currency if needed
-            Double convertedAmount = request.getAmount();
+            BigDecimal convertedAmount = request.getAmount();
             if (!fromCurrency.equals(toCurrency)) {
                 log.info("Currency conversion needed: {} {} -> {}", request.getAmount(), fromCurrency, toCurrency);
                 var resp = exchangeClient.convert(
@@ -186,13 +190,13 @@ public class TransferServiceImpl implements TransferService {
                 UpdateBalanceRequest.builder()
                     .bankAccountId(request.getFromBankAccountId())
                     .amount(request.getAmount())
-                    .operation("SUBTRACT")
+                    .operation(SUBTRACT)
                     .build());
             accountsClient.updateBalance(
                 UpdateBalanceRequest.builder()
                     .bankAccountId(request.getToBankAccountId())
                     .amount(convertedAmount)
-                    .operation("ADD")
+                    .operation(ADD)
                     .build());
 
             // Save transfer
