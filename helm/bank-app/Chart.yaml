@@ -10,10 +10,10 @@ keywords:
   - spring-boot
   - kubernetes
 maintainers:
-  - name: Bank App Team
-home: https://github.com/yourusername/bankapp
+  - name: Oleh Svyrydov
+home: https://github.com/olehsvyrydov/bankapp
 sources:
-  - https://github.com/yourusername/bankapp
+  - https://github.com/olehsvyrydov/bankapp
 dependencies:
   - name: postgresql
     version: "1.0.0"

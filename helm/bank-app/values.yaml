@@ -15,7 +15,7 @@ global:
     port: 5432
     database: bankdb
     username: bank_user
-    # Password should be in secrets
+    # Password will be in secrets
 
   # Global OAuth2 configuration
   oauth2:
