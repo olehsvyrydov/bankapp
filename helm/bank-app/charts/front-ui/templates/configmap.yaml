@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "front-ui.fullname" . }}
+  labels:
+    {{- include "front-ui.labels" . | nindent 4 }}
+data:
+  SPRING_PROFILES_ACTIVE: {{ .Values.springProfiles | quote }}
+  SPRING_APPLICATION_NAME: "front-ui"
+  SERVER_PORT: {{ .Values.service.port | quote }}
+
+  # Server configuration
+  SERVER_SERVLET_SESSION_TIMEOUT: "{{ .Values.session.timeout }}"
+
+  # OAuth2 configuration
+  SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI: {{ .Values.oauth2.resourceServerIssuerUri | quote }}
+
+  # Spring Cloud Kubernetes configuration
+  SPRING_CLOUD_KUBERNETES_ENABLED: "true"
+  SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED: {{ .Values.springCloudKubernetes.discovery.enabled | quote }}
+
+  # Logging
+  LOGGING_LEVEL_ROOT: "INFO"
+  LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: "INFO"

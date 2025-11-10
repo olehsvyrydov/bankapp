@@ -1,0 +1,188 @@
+# Global values for bank-app umbrella chart
+global:
+  namespace: bank-app-dev
+  environment: dev
+
+  # Global image settings
+  image:
+    registry: docker.io
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  # Global database configuration
+  postgresql:
+    host: postgresql
+    port: 5432
+    database: bankdb
+    username: bank_user
+    # Password should be in secrets
+
+  # Global OAuth2 configuration
+  oauth2:
+    issuerUri: http://auth-server:9100
+    tokenUri: http://auth-server:9100/oauth2/token
+
+  # Spring Cloud Kubernetes configuration
+  kubernetes:
+    enabled: true
+    discovery:
+      enabled: true
+      allNamespaces: false
+
+  # Global resource defaults
+  resources:
+    limits:
+      memory: 512Mi
+      cpu: 500m
+    requests:
+      memory: 256Mi
+      cpu: 250m
+
+# PostgreSQL subchart configuration
+postgresql:
+  enabled: true
+  storageClass: standard
+  storageSize: 10Gi
+  database: bankdb
+  username: bank_user
+  password: bank_password
+  schemas:
+    - auth
+    - accounts
+    - transfer
+    - cash
+    - exchange
+    - notifications
+
+# Auth Server subchart configuration
+auth-server:
+  enabled: true
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 9100
+  jwt:
+    secret: "your-256-bit-secret-for-jwt-signing-change-in-production"
+
+# Accounts Service subchart configuration
+accounts-service:
+  enabled: true
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 8081
+  oauth2:
+    clientId: accounts-service
+    clientSecret: accounts-secret
+    scopes: "accounts.read,accounts.write,notifications.send"
+
+# Transfer Service subchart configuration
+transfer-service:
+  enabled: true
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 8083
+  oauth2:
+    clientId: transfer-service
+    clientSecret: transfer-secret
+    scopes: "transfer.write,transfer.read,accounts.read,accounts.write,notifications.send,exchange.read"
+
+# Cash Service subchart configuration
+cash-service:
+  enabled: true
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 8082
+  oauth2:
+    clientId: cash-service
+    clientSecret: cash-secret
+    scopes: "cash.write,cash.read,accounts.read,accounts.write,notifications.send"
+
+# Exchange Service subchart configuration
+exchange-service:
+  enabled: true
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 8084
+  oauth2:
+    clientId: exchange-service
+    clientSecret: exchange-secret
+    scopes: "exchange.read"
+
+# Exchange Generator Service subchart configuration
+exchange-generator-service:
+  enabled: true
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 8085
+  oauth2:
+    clientId: exchange-generator-service
+    clientSecret: exchange-generator-secret
+    scopes: "exchange.generate,exchange.read,gateway"
+
+# Notifications Service subchart configuration
+notifications-service:
+  enabled: true
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 8087
+  oauth2:
+    clientId: notifications-service
+    clientSecret: notifications-secret
+    scopes: "notifications.send"
+  smtp:
+    host: smtp.gmail.com
+    port: 587
+    username: your-email@gmail.com
+    password: your-app-password
+    tls: true
+
+# Blocker Service subchart configuration
+blocker-service:
+  enabled: true
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 8086
+  oauth2:
+    clientId: blocker-service
+    clientSecret: blocker-secret
+    scopes: "blocker.check"
+  config:
+    maxAmountThreshold: 10000
+    suspiciousProbability: 0.2
+
+# Gateway Service subchart configuration
+gateway-service:
+  enabled: true
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 8100
+  oauth2:
+    clientId: gateway-client
+    clientSecret: gateway-secret
+    scopes: "gateway"
+
+# Front UI subchart configuration
+front-ui:
+  enabled: true
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 8090
+  session:
+    timeout: 1800  # 30 minutes
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx
+  host: bank-app.local
+  tls:
+    enabled: false

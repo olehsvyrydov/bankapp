@@ -1,0 +1,53 @@
+## Auth Server subchart default values
+
+image:
+  repository: auth-server
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  type: ClusterIP
+  port: 9100
+
+resources:
+  limits:
+    memory: 512Mi
+    cpu: 500m
+  requests:
+    memory: 256Mi
+    cpu: 250m
+
+# JWT configuration
+jwt:
+  secret: "your-256-bit-secret-for-jwt-signing-change-in-production"
+  accessTokenValidity: 3600
+  refreshTokenValidity: 86400
+
+# Database configuration (from global/parent)
+postgresql:
+  host: postgresql
+  port: 5432
+  database: bankdb
+  schema: auth
+  username: bank_user
+  # password from secret
+
+# Spring profiles
+springProfiles: kubernetes
+
+# Liveness and readiness probe configuration
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 90
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3

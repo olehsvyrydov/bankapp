@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "auth-server.fullname" . }}
+  labels:
+    {{- include "auth-server.labels" . | nindent 4 }}
+data:
+  SPRING_PROFILES_ACTIVE: {{ .Values.springProfiles | quote }}
+  SPRING_APPLICATION_NAME: "auth-server"
+  SERVER_PORT: {{ .Values.service.port | quote }}
+
+  # Database configuration
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://{{ .Values.postgresql.host }}:{{ .Values.postgresql.port }}/{{ .Values.postgresql.database }}"
+  SPRING_DATASOURCE_USERNAME: {{ .Values.postgresql.username | quote }}
+  SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: {{ .Values.postgresql.schema | quote }}
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "validate"
+  SPRING_JPA_SHOW_SQL: "false"
+
+  # Flyway configuration
+  SPRING_FLYWAY_ENABLED: "true"
+  SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
+  SPRING_FLYWAY_SCHEMAS: {{ .Values.postgresql.schema | quote }}
+
+  # JWT configuration
+  JWT_ACCESS_TOKEN_VALIDITY: {{ .Values.jwt.accessTokenValidity | quote }}
+  JWT_REFRESH_TOKEN_VALIDITY: {{ .Values.jwt.refreshTokenValidity | quote }}
+
+  # Issuer URI
+  JWT_ISSUER_URI: "http://auth-server:9100"
+
+  # Logging
+  LOGGING_LEVEL_ROOT: "INFO"
+  LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: "INFO"

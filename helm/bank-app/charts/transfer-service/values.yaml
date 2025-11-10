@@ -1,0 +1,59 @@
+## transfer-service subchart default values
+
+image:
+  repository: transfer-service
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  type: ClusterIP
+  port: 8083
+
+resources:
+  limits:
+    memory: 512Mi
+    cpu: 500m
+  requests:
+    memory: 256Mi
+    cpu: 250m
+
+# Database configuration (from global/parent)
+postgresql:
+  host: postgresql
+  port: 5432
+  database: bankdb
+  username: bank_user
+  # password from secret
+
+# Spring profiles
+springProfiles: kubernetes
+
+# Spring Cloud Kubernetes
+springCloudKubernetes:
+  enabled: true
+  discovery:
+    enabled: true
+
+# OAuth2 client configuration
+oauth2:
+  clientId: transfer-service
+  # clientSecret from secret
+  providerTokenUri: http://auth-server:9100/oauth2/token
+  resourceServerIssuerUri: http://auth-server:9100
+
+# Liveness and readiness probe configuration
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 90
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3

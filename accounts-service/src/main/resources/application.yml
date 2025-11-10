@@ -2,8 +2,6 @@ server:
   port: 8081
 
 spring:
-  config:
-    import: "optional:configserver:${CONFIG_SERVER_URL:http://config-server:8888}"
   application:
     name: accounts-service
 
@@ -48,8 +46,15 @@ spring:
             token-uri: ${TOKEN_URI:http://auth-server:9100/oauth2/token}
 
   cloud:
-    config:
-      fail-fast: false
+    kubernetes:
+      enabled: true
+      discovery:
+        enabled: true
+        all-namespaces: false
+      reload:
+        enabled: true
+        mode: polling
+        period: 5000
 
     openfeign:
       client:
@@ -59,13 +64,6 @@ spring:
             readTimeout: 10000
       circuitbreaker:
         enabled: true
-
-eureka:
-  client:
-    service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://eureka-server:8761/eureka/}
-  instance:
-    prefer-ip-address: true
 
 management:
   endpoints:
