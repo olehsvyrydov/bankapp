@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "bank-app.fullname" . }}-test-service-discovery"
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "bank-app.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: dns-test
+      image: busybox:latest
+      command: ['sh', '-c']
+      args:
+        - |
+          echo "Testing Kubernetes DNS service discovery..."
+
+          # Test DNS resolution for all services
+          SERVICES="postgresql auth-server accounts-service transfer-service cash-service exchange-service exchange-generator-service notifications-service blocker-service gateway-service front-ui"
+
+          for service in $SERVICES; do
+            echo "Testing DNS resolution for: {{ .Release.Name }}-$service"
+            nslookup {{ .Release.Name }}-$service || exit 1
+            echo "DNS resolution successful for $service ✓"
+          done
+
+          # Test service endpoints are accessible
+          echo ""
+          echo "Testing service endpoints..."
+
+          # Check if services are listening on their ports
+          nc -zv {{ .Release.Name }}-postgresql 5432 || exit 1
+          echo "PostgreSQL endpoint accessible ✓"
+
+          nc -zv {{ .Release.Name }}-auth-server {{ index .Values "auth-server" "service" "port" }} || exit 1
+          echo "Auth Server endpoint accessible ✓"
+
+          nc -zv {{ .Release.Name }}-accounts-service {{ index .Values "accounts-service" "service" "port" }} || exit 1
+          echo "Accounts Service endpoint accessible ✓"
+
+          nc -zv {{ .Release.Name }}-gateway-service {{ index .Values "gateway-service" "service" "port" }} || exit 1
+          echo "Gateway Service endpoint accessible ✓"
+
+          echo ""
+          echo "All service discovery tests passed!"

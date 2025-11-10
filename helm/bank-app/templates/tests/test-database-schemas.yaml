@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "bank-app.fullname" . }}-test-database-schemas"
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "bank-app.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: postgres-test
+      image: postgres:14-alpine
+      env:
+        - name: PGHOST
+          value: "{{ .Release.Name }}-postgresql"
+        - name: PGPORT
+          value: "5432"
+        - name: PGDATABASE
+          value: "{{ .Values.postgresql.database }}"
+        - name: PGUSER
+          value: "{{ .Values.postgresql.username }}"
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Release.Name }}-postgresql"
+              key: POSTGRES_PASSWORD
+      command: ['sh', '-c']
+      args:
+        - |
+          echo "Testing database schemas..."
+
+          # Wait for PostgreSQL to be ready
+          until pg_isready; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+
+          # Check if all required schemas exist
+          SCHEMAS="auth accounts transfer cash exchange notifications"
+          for schema in $SCHEMAS; do
+            echo "Checking schema: $schema"
+            result=$(psql -tAc "SELECT schema_name FROM information_schema.schemata WHERE schema_name='$schema'")
+            if [ "$result" != "$schema" ]; then
+              echo "ERROR: Schema $schema does not exist!"
+              exit 1
+            fi
+            echo "Schema $schema exists ✓"
+          done
+
+          echo "All database schemas exist!"

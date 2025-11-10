@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "bank-app.fullname" . }}-test-oauth2"
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "bank-app.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: curl-test
+      image: curlimages/curl:latest
+      command: ['sh', '-c']
+      args:
+        - |
+          echo "Testing OAuth2 endpoints..."
+
+          # Wait for auth-server to be ready
+          until curl -sf http://{{ .Release.Name }}-auth-server:{{ index .Values "auth-server" "service" "port" }}/actuator/health; do
+            echo "Waiting for Auth Server..."
+            sleep 5
+          done
+
+          # Test OAuth2 well-known configuration endpoint
+          echo "Testing OAuth2 well-known configuration..."
+          curl -sf http://{{ .Release.Name }}-auth-server:{{ index .Values "auth-server" "service" "port" }}/.well-known/oauth-authorization-server || {
+            echo "WARNING: OAuth2 well-known endpoint not available (may be normal)"
+          }
+
+          # Test token endpoint with client credentials
+          echo "Testing OAuth2 token endpoint with client credentials..."
+          response=$(curl -sf -X POST \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -d "grant_type=client_credentials" \
+            -d "client_id={{ index .Values "accounts-service" "oauth2" "clientId" }}" \
+            -d "client_secret={{ index .Values "accounts-service" "oauth2" "clientSecret" }}" \
+            http://{{ .Release.Name }}-auth-server:{{ index .Values "auth-server" "service" "port" }}/oauth2/token)
+
+          if echo "$response" | grep -q "access_token"; then
+            echo "OAuth2 token endpoint working correctly ✓"
+            echo "Successfully obtained access token"
+          else
+            echo "ERROR: Failed to obtain access token"
+            echo "Response: $response"
+            exit 1
+          fi
+
+          echo "OAuth2 tests passed!"

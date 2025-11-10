@@ -26,10 +26,10 @@ To access the application:
 {{- else }}
 
 1. Port forward to the front-ui service:
-   kubectl port-forward -n {{ .Values.global.namespace }} svc/{{ .Release.Name }}-front-ui {{ .Values.front-ui.service.port }}:{{ .Values.front-ui.service.port }}
+   kubectl port-forward -n {{ .Values.global.namespace }} svc/{{ .Release.Name }}-front-ui {{ index .Values "front-ui" "service" "port" }}:{{ index .Values "front-ui" "service" "port" }}
 
 2. Access the application at:
-   http://localhost:{{ .Values.front-ui.service.port }}
+   http://localhost:{{ index .Values "front-ui" "service" "port" }}
 
 {{- end }}
 

@@ -34,7 +34,7 @@ spec:
               service:
                 name: {{ .Release.Name }}-front-ui
                 port:
-                  number: {{ .Values.front-ui.service.port }}
+                  number: {{ index .Values "front-ui" "service" "port" }}
 
           # API Gateway - All backend API calls
           - path: /api
@@ -43,7 +43,7 @@ spec:
               service:
                 name: {{ .Release.Name }}-gateway-service
                 port:
-                  number: {{ .Values.gateway-service.service.port }}
+                  number: {{ index .Values "gateway-service" "service" "port" }}
 
           # OAuth2 endpoints - Authorization server
           - path: /oauth2
@@ -52,7 +52,7 @@ spec:
               service:
                 name: {{ .Release.Name }}-auth-server
                 port:
-                  number: {{ .Values.auth-server.service.port }}
+                  number: {{ index .Values "auth-server" "service" "port" }}
 
           # Login and logout endpoints
           - path: /login
@@ -61,7 +61,7 @@ spec:
               service:
                 name: {{ .Release.Name }}-auth-server
                 port:
-                  number: {{ .Values.auth-server.service.port }}
+                  number: {{ index .Values "auth-server" "service" "port" }}
 
           - path: /logout
             pathType: Prefix
@@ -69,5 +69,5 @@ spec:
               service:
                 name: {{ .Release.Name }}-auth-server
                 port:
-                  number: {{ .Values.auth-server.service.port }}
+                  number: {{ index .Values "auth-server" "service" "port" }}
 {{- end }}
