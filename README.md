@@ -5,28 +5,15 @@
 ## Требования
 
 - Java 21 и Maven 3.9+
-- Docker + Docker Compose
+- Docker (для сборки образов, загрузки в Minikube)
 - kubectl 1.27+, Helm 3.12+
 - Minikube 1.33+ (для локального Kubernetes)
 
+> Docker Compose ранее использовался для локального запуска, но модули `eureka-server` и `config-server` больше не поставляются с Dockerfile'ами, поэтому `docker compose up --build` не работает. Используйте Minikube/Helm варианты ниже.
+
 ## 🚀 Развертывание и использование
 
-### 1. Docker Compose (локальная разработка)
-1. Соберите артефакты:
-   ```bash
-   mvn -DskipTests package
-   ```
-2. Запустите стек:
-   ```bash
-   docker compose up --build
-   ```
-3. После старта сервисы доступны по адресам:
-   - UI: http://localhost:8090
-   - Gateway: http://localhost:8080
-   - Authorization Server: http://localhost:9100
-4. Для остановки выполните `docker compose down`.
-
-### 2. Minikube (через helper-скрипт)
+### 1. Minikube (через helper-скрипт)
 1. Выполните `./minikube-setup.sh all`.
    - Скрипт стартует Minikube (8 ГБ RAM, 4 CPU, драйвер docker), переключает docker-env, собирает и загружает образы, затем делает `helm upgrade --install bank-app`.
 2. После окончания добавьте `$(minikube ip) bank-app-dev.local` в `/etc/hosts`.
@@ -38,7 +25,7 @@
    - `./minikube-setup.sh status` — быстрая проверка Minikube, pods и сервисов.
    - `./minikube-setup.sh clean` — удаление релиза и namespace.
 
-### 3. Kubernetes + Helm (ручное развертывание)
+### 2. Kubernetes + Helm (ручное развертывание)
 1. Создайте namespace:
    ```bash
    kubectl create namespace bank-app-dev
@@ -71,8 +58,6 @@
 kubectl get pods -n bank-app-dev
 kubectl get svc -n bank-app-dev
 kubectl logs -n bank-app-dev <pod>
-docker compose ps
-docker compose logs <service>
 ```
 
 ## Пользователи по умолчанию
