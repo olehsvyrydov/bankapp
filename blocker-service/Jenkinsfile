@@ -1,0 +1,205 @@
+pipeline {
+    agent any
+
+    environment {
+        SERVICE_NAME = 'blocker-service'
+        DOCKER_REGISTRY = 'docker.io'
+        DOCKER_IMAGE = "${DOCKER_REGISTRY}/${SERVICE_NAME}"
+        HELM_CHART_PATH = "helm/bank-app/charts/${SERVICE_NAME}"
+        MAVEN_OPTS = '-Dmaven.repo.local=.m2/repository'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo "Checking out source code for ${SERVICE_NAME}"
+                checkout scm
+            }
+        }
+
+        stage('Validate Helm Chart') {
+            steps {
+                echo "Validating Helm chart for ${SERVICE_NAME}"
+                sh """
+                    helm lint ${HELM_CHART_PATH}
+                """
+            }
+        }
+
+        stage('Build Maven') {
+            steps {
+                echo "Building ${SERVICE_NAME} with Maven"
+                dir(SERVICE_NAME) {
+                    sh '''
+                        mvn clean package -DskipTests
+                    '''
+                }
+            }
+        }
+
+        stage('Run Unit Tests') {
+            steps {
+                echo "Running unit tests for ${SERVICE_NAME}"
+                dir(SERVICE_NAME) {
+                    sh '''
+                        mvn test
+                    '''
+                }
+            }
+            post {
+                always {
+                    junit "${SERVICE_NAME}/target/surefire-reports/*.xml"
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                echo "Building Docker image for ${SERVICE_NAME}"
+                dir(SERVICE_NAME) {
+                    script {
+                        def imageTag = "${BUILD_NUMBER}"
+                        sh """
+                            docker build -t ${DOCKER_IMAGE}:${imageTag} .
+                            docker tag ${DOCKER_IMAGE}:${imageTag} ${DOCKER_IMAGE}:latest
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                echo "Pushing Docker image to registry"
+                script {
+                    def imageTag = "${BUILD_NUMBER}"
+                    withDockerRegistry([credentialsId: 'docker-registry-credentials', url: "https://${DOCKER_REGISTRY}"]) {
+                        sh """
+                            docker push ${DOCKER_IMAGE}:${imageTag}
+                            docker push ${DOCKER_IMAGE}:latest
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Dev') {
+            steps {
+                echo "Deploying ${SERVICE_NAME} to dev namespace"
+                script {
+                    def imageTag = "${BUILD_NUMBER}"
+                    sh """
+                        helm upgrade --install ${SERVICE_NAME} ${HELM_CHART_PATH} \
+                            --namespace bank-app-dev \
+                            --create-namespace \
+                            --set image.repository=${DOCKER_IMAGE} \
+                            --set image.tag=${imageTag} \
+                            --values helm/bank-app/values-dev.yaml \
+                            --wait \
+                            --timeout 5m
+                    """
+                }
+            }
+        }
+
+        stage('Run Integration Tests - Dev') {
+            steps {
+                echo "Running integration tests in dev environment"
+                sh """
+                    helm test ${SERVICE_NAME} --namespace bank-app-dev --timeout 5m || true
+                """
+            }
+        }
+
+        stage('Deploy to Test') {
+            when {
+                branch 'master'
+            }
+            steps {
+                echo "Deploying ${SERVICE_NAME} to test namespace"
+                script {
+                    def imageTag = "${BUILD_NUMBER}"
+                    sh """
+                        helm upgrade --install ${SERVICE_NAME} ${HELM_CHART_PATH} \
+                            --namespace bank-app-test \
+                            --create-namespace \
+                            --set image.repository=${DOCKER_IMAGE} \
+                            --set image.tag=${imageTag} \
+                            --values helm/bank-app/values-test.yaml \
+                            --wait \
+                            --timeout 5m
+                    """
+                }
+            }
+        }
+
+        stage('Run Integration Tests - Test') {
+            when {
+                branch 'master'
+            }
+            steps {
+                echo "Running integration tests in test environment"
+                sh """
+                    helm test ${SERVICE_NAME} --namespace bank-app-test --timeout 5m || true
+                """
+            }
+        }
+
+        stage('Approval for Production') {
+            when {
+                branch 'master'
+            }
+            steps {
+                input message: "Deploy ${SERVICE_NAME} to production?", ok: 'Deploy'
+            }
+        }
+
+        stage('Deploy to Production') {
+            when {
+                branch 'master'
+            }
+            steps {
+                echo "Deploying ${SERVICE_NAME} to production namespace"
+                script {
+                    def imageTag = "${BUILD_NUMBER}"
+                    sh """
+                        helm upgrade --install ${SERVICE_NAME} ${HELM_CHART_PATH} \
+                            --namespace bank-app-prod \
+                            --create-namespace \
+                            --set image.repository=${DOCKER_IMAGE} \
+                            --set image.tag=${imageTag} \
+                            --values helm/bank-app/values-prod.yaml \
+                            --wait \
+                            --timeout 5m
+                    """
+                }
+            }
+        }
+
+        stage('Run Smoke Tests - Production') {
+            when {
+                branch 'master'
+            }
+            steps {
+                echo "Running smoke tests in production environment"
+                sh """
+                    helm test ${SERVICE_NAME} --namespace bank-app-prod --timeout 5m || true
+                """
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Cleaning up workspace"
+            cleanWs()
+        }
+        success {
+            echo "${SERVICE_NAME} pipeline completed successfully"
+        }
+        failure {
+            echo "${SERVICE_NAME} pipeline failed"
+            // You can add notification here (email, Slack, etc.)
+        }
+    }
+}

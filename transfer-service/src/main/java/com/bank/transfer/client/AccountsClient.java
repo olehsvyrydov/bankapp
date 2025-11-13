@@ -13,7 +13,7 @@ import java.util.List;
 
 
 @FeignClient(
-    name = "gateway-service",
+    name = "${clients.gateway.service-id:bank-app-gateway-service}",
     contextId = "accountsClient",
     fallbackFactory = AccountsClientFallbackFactory.class)
 public interface AccountsClient {

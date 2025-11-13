@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "bank-app.fullname" . }}-test-connection"
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "bank-app.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: wget
+      image: busybox:latest
+      command: ['sh', '-c']
+      args:
+        - |
+          echo "Testing connectivity to all services..."
+
+          # Test PostgreSQL
+          echo "Testing PostgreSQL..."
+          nc -zv {{ .Release.Name }}-postgresql 5432 || exit 1
+
+          # Test Auth Server
+          echo "Testing Auth Server..."
+          wget --spider --timeout=30 http://{{ .Release.Name }}-auth-server:{{ index .Values "auth-server" "service" "port" }}/actuator/health || exit 1
+
+          # Test Accounts Service
+          echo "Testing Accounts Service..."
+          wget --spider --timeout=30 http://{{ .Release.Name }}-accounts-service:{{ index .Values "accounts-service" "service" "port" }}/actuator/health || exit 1
+
+          # Test Gateway Service
+          echo "Testing Gateway Service..."
+          wget --spider --timeout=30 http://{{ .Release.Name }}-gateway-service:{{ index .Values "gateway-service" "service" "port" }}/actuator/health || exit 1
+
+          # Test Front UI
+          echo "Testing Front UI..."
+          wget --spider --timeout=30 http://{{ .Release.Name }}-front-ui:{{ index .Values "front-ui" "service" "port" }}/actuator/health || exit 1
+
+          echo "All connectivity tests passed!"

@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "blocker-service.fullname" . }}
+  labels:
+    {{- include "blocker-service.labels" . | nindent 4 }}
+data:
+  SPRING_PROFILES_ACTIVE: {{ .Values.springProfiles | quote }}
+  SPRING_APPLICATION_NAME: "blocker-service"
+  SERVER_PORT: {{ .Values.service.port | quote }}
+
+  # Database configuration
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://{{ .Values.global.postgresql.host }}:{{ .Values.global.postgresql.port }}/{{ .Values.global.postgresql.database }}"
+  SPRING_DATASOURCE_USERNAME: {{ .Values.global.postgresql.username | quote }}
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "validate"
+  SPRING_JPA_SHOW_SQL: "false"
+
+  # Flyway configuration
+  SPRING_FLYWAY_ENABLED: "true"
+  SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
+  SPRING_FLYWAY_SCHEMAS: "exchange"
+
+  # OAuth2 configuration
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: {{ default .Values.global.oauth2.issuerUri .Values.oauth2.resourceServerIssuerUri | quote }}
+  SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_BLOCKER_SERVICE_TOKEN_URI: {{ default .Values.global.oauth2.tokenUri .Values.oauth2.providerTokenUri | quote }}
+  SECURITY_ISSUER: {{ default .Values.global.oauth2.issuerUri .Values.oauth2.resourceServerIssuerUri | quote }}
+  TOKEN_URI: {{ default .Values.global.oauth2.tokenUri .Values.oauth2.providerTokenUri | quote }}
+
+  # Spring Cloud Kubernetes configuration
+  SPRING_CLOUD_KUBERNETES_ENABLED: "true"
+  SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED: {{ .Values.springCloudKubernetes.discovery.enabled | quote }}
+  SPRING_CLOUD_KUBERNETES_LOADBALANCER_MODE: {{ default "SERVICE" .Values.global.loadBalancer.mode | quote }}
+
+  # Service-specific configuration
+  {{- if .Values.config }}
+  {{- if .Values.config.maxAmountThreshold }}
+  BLOCKER_MAX_AMOUNT_THRESHOLD: {{ .Values.config.maxAmountThreshold | quote }}
+  {{- end }}
+  {{- if .Values.config.suspiciousProbability }}
+  BLOCKER_SUSPICIOUS_PROBABILITY: {{ .Values.config.suspiciousProbability | quote }}
+  {{- end }}
+  {{- end }}
+
+  # Logging
+  LOGGING_LEVEL_ROOT: "INFO"
+  LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: "INFO"
+  CLIENTS_GATEWAY_SERVICE_ID: {{ (.Values.global.services.gateway.name | default "bank-app-gateway-service") | quote }}
+  CLIENTS_AUTH_SERVICE_ID: {{ (.Values.global.services.auth.name | default "bank-app-auth-server") | quote }}

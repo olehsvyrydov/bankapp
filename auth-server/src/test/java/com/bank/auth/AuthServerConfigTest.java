@@ -44,6 +44,6 @@ public class AuthServerConfigTest {
     @Test
     void shouldHaveAuthorizationServerSettings() {
         assertThat(authorizationServerSettings).isNotNull();
-        assertThat(authorizationServerSettings.getIssuer()).isEqualTo("http://auth-server:9100");
+        assertThat(authorizationServerSettings.getIssuer()).isEqualTo("http://bank-app-auth-server:9100");
     }
 }

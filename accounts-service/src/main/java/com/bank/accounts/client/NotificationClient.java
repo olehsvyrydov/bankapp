@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @FeignClient(
-    name = "gateway-service",
+    name = "${clients.gateway.service-id:bank-app-gateway-service}",
     contextId = "notificationClient",
     fallback = NotificationClientFallback.class
 )

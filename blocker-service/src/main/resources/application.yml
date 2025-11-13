@@ -11,7 +11,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://auth-server:9100
+          issuer-uri: http://bank-app-auth-server:9100
       client:
         registration:
           blocker-service:
@@ -21,7 +21,7 @@ spring:
             scope: blocker.check
         provider:
           blocker-service:
-            token-uri: http://auth-server:9100/oauth2/token
+            token-uri: http://bank-app-auth-server:9100/oauth2/token
 
   cloud:
     openfeign:

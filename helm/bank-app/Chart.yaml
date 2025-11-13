@@ -1,0 +1,61 @@
+apiVersion: v2
+name: bank-app
+description: A Helm chart for Bank microservices application
+type: application
+version: 2.0.0
+appVersion: "2.0.0"
+keywords:
+  - bank
+  - microservices
+  - spring-boot
+  - kubernetes
+maintainers:
+  - name: Oleh Svyrydov
+home: https://github.com/olehsvyrydov/bankapp
+sources:
+  - https://github.com/olehsvyrydov/bankapp
+dependencies:
+  - name: postgresql
+    version: "1.0.0"
+    repository: "file://./charts/postgresql"
+    condition: postgresql.enabled
+  - name: auth-server
+    version: "1.0.0"
+    repository: "file://./charts/auth-server"
+    condition: auth-server.enabled
+  - name: accounts-service
+    version: "1.0.0"
+    repository: "file://./charts/accounts-service"
+    condition: accounts-service.enabled
+  - name: transfer-service
+    version: "1.0.0"
+    repository: "file://./charts/transfer-service"
+    condition: transfer-service.enabled
+  - name: cash-service
+    version: "1.0.0"
+    repository: "file://./charts/cash-service"
+    condition: cash-service.enabled
+  - name: exchange-service
+    version: "1.0.0"
+    repository: "file://./charts/exchange-service"
+    condition: exchange-service.enabled
+  - name: exchange-generator-service
+    version: "1.0.0"
+    repository: "file://./charts/exchange-generator-service"
+    condition: exchange-generator-service.enabled
+  - name: notifications-service
+    version: "1.0.0"
+    repository: "file://./charts/notifications-service"
+    condition: notifications-service.enabled
+  - name: blocker-service
+    version: "1.0.0"
+    repository: "file://./charts/blocker-service"
+    condition: blocker-service.enabled
+  - name: gateway-service
+    version: "1.0.0"
+    repository: "file://./charts/gateway-service"
+    condition: gateway-service.enabled
+  - name: front-ui
+    version: "1.0.0"
+    repository: "file://./charts/front-ui"
+    condition: front-ui.enabled

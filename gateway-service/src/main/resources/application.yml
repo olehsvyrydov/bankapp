@@ -15,10 +15,10 @@ spring:
             scope: gateway
         provider:
           gateway-client:
-            token-uri: ${TOKEN_URI:http://auth-server:9100/oauth2/token}
+            token-uri: ${TOKEN_URI:http://bank-app-auth-server:9100/oauth2/token}
       resourceserver:
         jwt:
-          issuer-uri: http://auth-server:9100
+          issuer-uri: http://bank-app-auth-server:9100
   cloud:
     gateway:
       server:
@@ -27,31 +27,31 @@ spring:
             - PreserveHostHeader
           routes:
             - id: accounts-service
-              uri: lb://accounts-service
+              uri: http://bank-app-accounts-service.bank-app-dev.svc.cluster.local:8081
               predicates:
                 - Path=/api/accounts/**
             - id: cash-service
-              uri: lb://cash-service
+              uri: http://bank-app-cash-service.bank-app-dev.svc.cluster.local:8082
               predicates:
                 - Path=/api/cash/**
             - id: transfer-service
-              uri: lb://transfer-service
+              uri: http://bank-app-transfer-service.bank-app-dev.svc.cluster.local:8083
               predicates:
                 - Path=/api/transfers/**
             - id: exchange-service
-              uri: lb://exchange-service
+              uri: http://bank-app-exchange-service.bank-app-dev.svc.cluster.local:8084
               predicates:
                 - Path=/api/exchange/**
-            - id: exchange-service-generator
-              uri: lb://exchange-generator-service
+            - id: exchange-generator-service
+              uri: http://bank-app-exchange-generator-service.bank-app-dev.svc.cluster.local:8085
               predicates:
                 - Path=/api/exchange/generate/**
             - id: notifications-service
-              uri: lb://notifications-service
+              uri: http://bank-app-notifications-service.bank-app-dev.svc.cluster.local:8087
               predicates:
                 - Path=/api/notifications/**
             - id: blocker-service
-              uri: lb://blocker-service
+              uri: http://bank-app-blocker-service.bank-app-dev.svc.cluster.local:8086
               predicates:
                 - Path=/api/blocker/**
           discovery:
@@ -67,6 +67,7 @@ spring:
 
 eureka:
   client:
+    enabled: false
     service-url:
       defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
   instance:

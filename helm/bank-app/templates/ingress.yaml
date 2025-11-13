@@ -1,0 +1,71 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "bank-app.fullname" . }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "bank-app.labels" . | nindent 4 }}
+  annotations:
+    {{- if .Values.ingress.className }}
+    kubernetes.io/ingress.class: {{ .Values.ingress.className }}
+    {{- end }}
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host }}
+      secretName: {{ include "bank-app.fullname" . }}-tls
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          # Front-UI - Main entry point
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-front-ui
+                port:
+                  number: {{ index .Values "front-ui" "service" "port" }}
+
+          # API Gateway - All backend API calls
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-gateway-service
+                port:
+                  number: {{ index .Values "gateway-service" "service" "port" }}
+
+          # OAuth2 endpoints - Authorization server
+          - path: /oauth2
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-auth-server
+                port:
+                  number: {{ index .Values "auth-server" "service" "port" }}
+
+          # Login and logout endpoints stay on the Front UI
+          - path: /login
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-front-ui
+                port:
+                  number: {{ index .Values "front-ui" "service" "port" }}
+
+          - path: /logout
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-front-ui
+                port:
+                  number: {{ index .Values "front-ui" "service" "port" }}
+{{- end }}
