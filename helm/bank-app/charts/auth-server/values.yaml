@@ -27,12 +27,12 @@ jwt:
 
 # Database configuration (from global/parent)
 postgresql:
-  host: postgresql
-  port: 5432
-  database: bankdb
+  host: ""
+  port: ""
+  database: ""
   schema: auth
-  username: bank_user
-  # password from secret
+  username: ""
+  # password from secret/global
 
 # Spring profiles
 springProfiles: kubernetes

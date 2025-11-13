@@ -47,3 +47,16 @@ Selector labels
 app.kubernetes.io/name: {{ include "cash-service.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/*
+Return the service account name
+*/}}
+{{- define "cash-service.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create -}}
+{{- default (printf "%s-sa" (include "cash-service.fullname" .)) .Values.serviceAccount.name | trunc 63 | trimSuffix "-" -}}
+{{- else if .Values.serviceAccount.name -}}
+{{- .Values.serviceAccount.name -}}
+{{- else -}}
+{{- default "default" .Values.global.discovery.serviceAccount.name -}}
+{{- end -}}
+{{- end }}

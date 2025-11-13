@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
-@FeignClient(name = "auth-server", contextId = "authServiceClient", configuration = AuthClientConfig.class)
+@FeignClient(name = "${clients.auth.service-id:bank-app-auth-server}", contextId = "authServiceClient", configuration = AuthClientConfig.class)
 public interface AuthServiceClient {
 
     @PostMapping("/api/auth/register")

@@ -21,11 +21,11 @@ resources:
 
 # Database configuration (from global/parent)
 postgresql:
-  host: postgresql
-  port: 5432
-  database: bankdb
-  username: bank_user
-  # password from secret
+  host: ""
+  port: ""
+  database: ""
+  username: ""
+  # password from secret/global
 
 # Spring profiles
 springProfiles: kubernetes
@@ -40,8 +40,8 @@ springCloudKubernetes:
 oauth2:
   clientId: accounts-service
   # clientSecret from secret
-  providerTokenUri: http://auth-server:9100/oauth2/token
-  resourceServerIssuerUri: http://auth-server:9100
+  providerTokenUri: ""
+  resourceServerIssuerUri: ""
 
 # Liveness and readiness probe configuration
 livenessProbe:
@@ -57,3 +57,10 @@ readinessProbe:
   periodSeconds: 10
   timeoutSeconds: 3
   failureThreshold: 3
+
+startupProbe:
+  enabled: true
+  initialDelaySeconds: 0
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 30

@@ -40,6 +40,7 @@ spring:
 
 eureka:
   client:
+    enabled: false
     service-url:
       defaultZone: ${EUREKA_SERVER_URL:http://eureka-server:8761/eureka/}
   instance:
@@ -62,3 +63,9 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     feign: DEBUG
+
+clients:
+  gateway:
+    service-id: ${GATEWAY_SERVICE_ID:bank-app-gateway-service}
+  auth:
+    service-id: ${AUTH_SERVICE_ID:bank-app-auth-server}

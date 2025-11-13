@@ -31,7 +31,7 @@ spring:
       # Resource Server - for validating incoming JWT tokens
       resourceserver:
         jwt:
-          issuer-uri: ${SECURITY_ISSUER:http://auth-server:9100}
+          issuer-uri: ${SECURITY_ISSUER:http://bank-app-auth-server:9100}
 
       # OAuth2 Client - for making authenticated requests to other services
       client:
@@ -43,7 +43,7 @@ spring:
             scope: accounts.read,accounts.write,notifications.send
         provider:
           accounts-service:
-            token-uri: ${TOKEN_URI:http://auth-server:9100/oauth2/token}
+            token-uri: ${TOKEN_URI:http://bank-app-auth-server:9100/oauth2/token}
 
   cloud:
     kubernetes:
@@ -75,3 +75,9 @@ security:
   internal-client:
     registration-id: accounts-service
     forward-user-token: false
+
+clients:
+  gateway:
+    service-id: ${GATEWAY_SERVICE_ID:bank-app-gateway-service}
+  auth:
+    service-id: ${AUTH_SERVICE_ID:bank-app-auth-server}

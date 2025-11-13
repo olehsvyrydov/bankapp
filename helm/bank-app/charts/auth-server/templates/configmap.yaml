@@ -10,8 +10,8 @@ data:
   SERVER_PORT: {{ .Values.service.port | quote }}
 
   # Database configuration
-  SPRING_DATASOURCE_URL: "jdbc:postgresql://{{ .Values.postgresql.host }}:{{ .Values.postgresql.port }}/{{ .Values.postgresql.database }}"
-  SPRING_DATASOURCE_USERNAME: {{ .Values.postgresql.username | quote }}
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://{{ .Values.global.postgresql.host }}:{{ .Values.global.postgresql.port }}/{{ .Values.global.postgresql.database }}"
+  SPRING_DATASOURCE_USERNAME: {{ .Values.global.postgresql.username | quote }}
   SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: {{ .Values.postgresql.schema | quote }}
   SPRING_JPA_HIBERNATE_DDL_AUTO: "validate"
   SPRING_JPA_SHOW_SQL: "false"
@@ -26,8 +26,13 @@ data:
   JWT_REFRESH_TOKEN_VALIDITY: {{ .Values.jwt.refreshTokenValidity | quote }}
 
   # Issuer URI
-  JWT_ISSUER_URI: "http://auth-server:9100"
+  JWT_ISSUER_URI: {{ .Values.global.oauth2.issuerUri | quote }}
+  SECURITY_ISSUER: {{ .Values.global.oauth2.issuerUri | quote }}
+  TOKEN_URI: {{ .Values.global.oauth2.tokenUri | quote }}
 
   # Logging
   LOGGING_LEVEL_ROOT: "INFO"
   LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: "INFO"
+  SPRING_CLOUD_KUBERNETES_LOADBALANCER_MODE: {{ default "SERVICE" .Values.global.loadBalancer.mode | quote }}
+  CLIENTS_GATEWAY_SERVICE_ID: {{ (.Values.global.services.gateway.name | default "bank-app-gateway-service") | quote }}
+  CLIENTS_AUTH_SERVICE_ID: {{ (.Values.global.services.auth.name | default "bank-app-auth-server") | quote }}

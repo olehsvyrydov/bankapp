@@ -55,4 +55,10 @@ jwt:
   refresh-token-validity: 86400 # 24 hours in seconds
 
 security:
-  issuer: ${SECURITY_ISSUER:http://auth-server:9100}
+  issuer: ${SECURITY_ISSUER:http://bank-app-auth-server:9100}
+
+clients:
+  gateway:
+    service-id: ${GATEWAY_SERVICE_ID:bank-app-gateway-service}
+  auth:
+    service-id: ${AUTH_SERVICE_ID:bank-app-auth-server}

@@ -14,10 +14,11 @@ spec:
       labels:
         {{- include "accounts-service.selectorLabels" . | nindent 8 }}
     spec:
+      serviceAccountName: {{ default "default" .Values.global.discovery.serviceAccount.name }}
       initContainers:
         - name: wait-for-postgres
           image: "postgres:14-alpine"
-          command: ['sh', '-c', "until pg_isready -h {{ .Values.postgresql.host }} -p {{ .Values.postgresql.port }}; do echo waiting for postgres; sleep 2; done;"]
+          command: ['sh', '-c', "until pg_isready -h {{ .Values.global.postgresql.host }} -p {{ .Values.global.postgresql.port }}; do echo waiting for postgres; sleep 2; done;"]
       containers:
         - name: accounts-service
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -50,6 +51,16 @@ spec:
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
             timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
             failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.startupProbe.failureThreshold }}
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

@@ -10,9 +10,7 @@ metadata:
     {{- if .Values.ingress.className }}
     kubernetes.io/ingress.class: {{ .Values.ingress.className }}
     {{- end }}
-    nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   {{- if .Values.ingress.className }}
   ingressClassName: {{ .Values.ingress.className }}
@@ -54,20 +52,20 @@ spec:
                 port:
                   number: {{ index .Values "auth-server" "service" "port" }}
 
-          # Login and logout endpoints
+          # Login and logout endpoints stay on the Front UI
           - path: /login
             pathType: Prefix
             backend:
               service:
-                name: {{ .Release.Name }}-auth-server
+                name: {{ .Release.Name }}-front-ui
                 port:
-                  number: {{ index .Values "auth-server" "service" "port" }}
+                  number: {{ index .Values "front-ui" "service" "port" }}
 
           - path: /logout
             pathType: Prefix
             backend:
               service:
-                name: {{ .Release.Name }}-auth-server
+                name: {{ .Release.Name }}-front-ui
                 port:
-                  number: {{ index .Values "auth-server" "service" "port" }}
+                  number: {{ index .Values "front-ui" "service" "port" }}
 {{- end }}

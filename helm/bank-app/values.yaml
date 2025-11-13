@@ -6,21 +6,36 @@ global:
   # Global image settings
   image:
     registry: docker.io
-    pullPolicy: IfNotPresent
+    pullPolicy: never
     tag: "latest"
 
   # Global database configuration
   postgresql:
-    host: postgresql
+    host: bank-app-postgresql
     port: 5432
     database: bankdb
     username: bank_user
+    password: bank_password
     # Password will be in secrets
 
   # Global OAuth2 configuration
   oauth2:
-    issuerUri: http://auth-server:9100
-    tokenUri: http://auth-server:9100/oauth2/token
+    issuerUri: http://bank-app-auth-server:9100
+    tokenUri: http://bank-app-auth-server:9100/oauth2/token
+
+  services:
+    auth:
+      name: bank-app-auth-server
+    gateway:
+      name: bank-app-gateway-service
+
+  discovery:
+    serviceAccount:
+      create: true
+      name: bank-app-discovery
+
+  loadBalancer:
+    mode: SERVICE
 
   # Spring Cloud Kubernetes configuration
   kubernetes:

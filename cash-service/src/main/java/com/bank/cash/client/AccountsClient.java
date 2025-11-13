@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.Map;
 
 @FeignClient(
-    name = "gateway-service",
+    name = "${clients.gateway.service-id:bank-app-gateway-service}",
     contextId = "accountsClient"
 )
 public interface AccountsClient {

@@ -44,7 +44,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://auth-server:9100
+          issuer-uri: http://bank-app-auth-server:9100
       client:
         registration:
           notifications-service:
@@ -54,7 +54,7 @@ spring:
             scope: notifications.send
         provider:
           notifications-service:
-            token-uri: http://auth-server:9100/oauth2/token
+            token-uri: http://bank-app-auth-server:9100/oauth2/token
 
   cloud:
     openfeign:
@@ -66,6 +66,7 @@ spring:
 
 eureka:
   client:
+    enabled: false
     service-url:
       defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
 

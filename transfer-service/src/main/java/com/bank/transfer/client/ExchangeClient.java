@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.math.BigDecimal;
 
 @FeignClient(
-    name = "gateway-service",
+    name = "${clients.gateway.service-id:bank-app-gateway-service}",
     contextId = "exchangeClient",
     fallbackFactory = ExchangeClientFallbackFactory.class
 )

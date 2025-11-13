@@ -14,10 +14,11 @@ spec:
       labels:
         {{- include "notifications-service.selectorLabels" . | nindent 8 }}
     spec:
+      serviceAccountName: {{ default "default" .Values.global.discovery.serviceAccount.name }}
       initContainers:
         - name: wait-for-postgres
           image: "postgres:14-alpine"
-          command: ['sh', '-c', "until pg_isready -h {{ .Values.postgresql.host }} -p {{ .Values.postgresql.port }}; do echo waiting for postgres; sleep 2; done;"]
+          command: ['sh', '-c', "until pg_isready -h {{ .Values.global.postgresql.host }} -p {{ .Values.global.postgresql.port }}; do echo waiting for postgres; sleep 2; done;"]
       containers:
         - name: notifications-service
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

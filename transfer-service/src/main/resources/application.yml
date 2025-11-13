@@ -56,6 +56,7 @@ spring:
 
 eureka:
   client:
+    enabled: false
     service-url:
       defaultZone: ${EUREKA_SERVER_URL:http://eureka-server:8761/eureka/}
   instance:
@@ -76,3 +77,9 @@ management:
     web:
       exposure:
         include: health,info
+
+clients:
+  gateway:
+    service-id: ${GATEWAY_SERVICE_ID:bank-app-gateway-service}
+  auth:
+    service-id: ${AUTH_SERVICE_ID:bank-app-auth-server}
