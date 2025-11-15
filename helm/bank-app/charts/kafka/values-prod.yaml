@@ -1,0 +1,78 @@
+kafka:
+  enabled: true
+
+  controller:
+    replicaCount: 3
+    persistence:
+      enabled: true
+      size: 16Gi
+      storageClass: "fast-ssd"
+    resources:
+      limits:
+        memory: 2Gi
+        cpu: 2000m
+      requests:
+        memory: 1Gi
+        cpu: 1000m
+
+  broker:
+    replicaCount: 3
+    persistence:
+      enabled: true
+      size: 16Gi
+      storageClass: "fast-ssd"
+    resources:
+      limits:
+        memory: 2Gi
+        cpu: 2000m
+      requests:
+        memory: 1Gi
+        cpu: 1000m
+
+  provisioning:
+    enabled: true
+    topics:
+      - name: bank.notifications
+        partitions: 6
+        replicationFactor: 3
+        config:
+          retention.ms: "604800000"
+          segment.bytes: "1073741824"
+          min.insync.replicas: "2"
+      - name: bank.notifications-retry
+        partitions: 6
+        replicationFactor: 3
+        config:
+          retention.ms: "86400000"
+          min.insync.replicas: "2"
+      - name: bank.notifications-dlt
+        partitions: 6
+        replicationFactor: 3
+        config:
+          retention.ms: "2592000000"
+          min.insync.replicas: "2"
+      - name: bank.exchange.rates
+        partitions: 4
+        replicationFactor: 3
+        config:
+          retention.ms: "3600000"
+          cleanup.policy: "delete"
+          min.insync.replicas: "2"
+      - name: bank.exchange.rates-retry
+        partitions: 4
+        replicationFactor: 3
+        config:
+          min.insync.replicas: "2"
+      - name: bank.exchange.rates-dlt
+        partitions: 4
+        replicationFactor: 3
+        config:
+          min.insync.replicas: "2"
+
+  metrics:
+    jmx:
+      enabled: true
+    kafka:
+      enabled: true
+    serviceMonitor:
+      enabled: true

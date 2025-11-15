@@ -1,8 +1,7 @@
 package com.bank.generator.service;
 
 import com.bank.common.dto.contracts.exchange.ExchangeRateDTO;
-import com.bank.generator.client.ExchangeClient;
-import feign.FeignException;
+import com.bank.generator.kafka.ExchangeRateProducer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 
@@ -14,11 +13,11 @@ public abstract class AbstractRateGeneratorService implements RateGeneratorServi
     protected static final String TARGET_SERVICE_ID = "exchange-service";
     private boolean awaitingGatewayLogPrinted = false;
 
-    protected final ExchangeClient exchangeClient;
+    protected final ExchangeRateProducer exchangeRateProducer;
     protected final DiscoveryClient discoveryClient;
 
-    protected AbstractRateGeneratorService(ExchangeClient exchangeClient, DiscoveryClient discoveryClient) {
-        this.exchangeClient = exchangeClient;
+    protected AbstractRateGeneratorService(ExchangeRateProducer exchangeRateProducer, DiscoveryClient discoveryClient) {
+        this.exchangeRateProducer = exchangeRateProducer;
         this.discoveryClient = discoveryClient;
     }
 
@@ -30,11 +29,8 @@ public abstract class AbstractRateGeneratorService implements RateGeneratorServi
                 .sellRate(sellRate)
                 .build();
 
-            exchangeClient.updateRate(request);
-            log.debug("Published exchange rate update: {} buy={} sell={}", currency, buyRate, sellRate);
-        } catch (FeignException ex) {
-            log.warn("Feign error while updating rate for {}: status={}, message={}",
-                currency, ex.status(), ex.getMessage());
+            exchangeRateProducer.sendExchangeRate(request);
+            log.debug("Published exchange rate update via Kafka: {} buy={} sell={}", currency, buyRate, sellRate);
         } catch (Exception e) {
             log.error("Unexpected error updating rate for {}: {}", currency, e.getMessage(), e);
         }

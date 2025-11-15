@@ -44,6 +44,10 @@ global:
       enabled: true
       allNamespaces: false
 
+  # Global Kafka configuration
+  kafka:
+    bootstrapServers: kafka:9092
+
   # Global resource defaults
   resources:
     limits:
@@ -68,6 +72,10 @@ postgresql:
     - cash
     - exchange
     - notifications
+
+# Kafka subchart configuration
+kafka:
+  enabled: true
 
 # Auth Server subchart configuration
 auth-server:

@@ -9,6 +9,7 @@ import com.bank.common.dto.contracts.notifications.NotificationRequest;
 import com.bank.common.dto.contracts.transfer.TransferRequest;
 import com.bank.common.dto.contracts.transfer.TransferResponse;
 import com.bank.transfer.client.*;
+import com.bank.transfer.kafka.NotificationProducer;
 import com.bank.transfer.entity.Transfer;
 import com.bank.transfer.repository.TransferRepository;
 import com.bank.common.exception.BusinessException;
@@ -34,19 +35,19 @@ public class TransferServiceImpl implements TransferService {
     private final AccountsClient accountsClient;
     private final ExchangeClient exchangeClient;
     private final BlockerClient blockerClient;
-    private final NotificationClient notificationClient;
+    private final NotificationProducer notificationProducer;
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public TransferServiceImpl(TransferRepository transferRepository,
         AccountsClient accountsClient,
         ExchangeClient exchangeClient,
         BlockerClient blockerClient,
-        NotificationClient notificationClient) {
+        NotificationProducer notificationProducer) {
         this.transferRepository = transferRepository;
         this.accountsClient = accountsClient;
         this.exchangeClient = exchangeClient;
         this.blockerClient = blockerClient;
-        this.notificationClient = notificationClient;
+        this.notificationProducer = notificationProducer;
     }
 
     @Override
@@ -148,7 +149,7 @@ public class TransferServiceImpl implements TransferService {
                         .build();
                     transferRepository.save(transfer);
 
-                    notificationClient.sendNotification(NotificationRequest.builder()
+                    notificationProducer.sendNotification(NotificationRequest.builder()
                         .username(username)
                         .message("The operation looks suspicious and is blocked by bank")
                         .type("WARNING")
@@ -212,15 +213,15 @@ public class TransferServiceImpl implements TransferService {
                 .build();
             transfer = transferRepository.save(transfer);
 
-            // Send notifications
-            notificationClient.sendNotification(NotificationRequest.builder()
+            // Send notifications via Kafka
+            notificationProducer.sendNotification(NotificationRequest.builder()
                 .username(username)
                 .message("Transfer of " + request.getAmount() + " " + fromCurrency + " sent")
                 .type("INFO")
                 .build());
 
             if (!username.equals(toUsername)) {
-                notificationClient.sendNotification(NotificationRequest.builder()
+                notificationProducer.sendNotification(NotificationRequest.builder()
                     .username(toUsername)
                     .message("Transfer of " + convertedAmount + " " + toCurrency + " received")
                     .type("INFO")

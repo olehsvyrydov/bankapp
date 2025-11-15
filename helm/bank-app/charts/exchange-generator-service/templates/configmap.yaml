@@ -31,6 +31,9 @@ data:
   SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED: {{ .Values.springCloudKubernetes.discovery.enabled | quote }}
   SPRING_CLOUD_KUBERNETES_LOADBALANCER_MODE: {{ default "SERVICE" .Values.global.loadBalancer.mode | quote }}
 
+  # Kafka configuration
+  KAFKA_BOOTSTRAP_SERVERS: {{ .Values.kafka.bootstrapServers | default "kafka:9092" | quote }}
+
   # Logging
   LOGGING_LEVEL_ROOT: "INFO"
   LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: "INFO"

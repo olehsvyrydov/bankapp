@@ -1,6 +1,6 @@
 package com.bank.accounts.service;
 
-import com.bank.accounts.client.NotificationClient;
+import com.bank.accounts.kafka.NotificationProducer;
 import com.bank.accounts.entity.Account;
 import com.bank.accounts.entity.BankAccount;
 import com.bank.accounts.mapper.AccountMapper;
@@ -25,16 +25,16 @@ public class AccountServiceImpl implements AccountService {
     public static final String BANK_ACCOUNT_NOT_FOUND_MESSAGE = "Bank account not found";
     private final AccountRepository accountRepository;
     private final BankAccountRepository bankAccountRepository;
-    private final NotificationClient notificationClient;
+    private final NotificationProducer notificationProducer;
     private final AccountMapper accountMapper;
 
     public AccountServiceImpl(AccountRepository accountRepository,
         BankAccountRepository bankAccountRepository,
-        NotificationClient notificationClient,
+        NotificationProducer notificationProducer,
         AccountMapper accountMapper) {
         this.accountRepository = accountRepository;
         this.bankAccountRepository = bankAccountRepository;
-        this.notificationClient = notificationClient;
+        this.notificationProducer = notificationProducer;
         this.accountMapper = accountMapper;
     }
 
@@ -63,8 +63,8 @@ public class AccountServiceImpl implements AccountService {
 
         bankAccountRepository.save(bankAccount);
 
-        // Send notification
-        notificationClient.sendNotification(NotificationRequest.builder()
+        // Send notification via Kafka
+        notificationProducer.sendNotification(NotificationRequest.builder()
             .username(request.getUsername())
             .message("Account created successfully")
             .type("INFO")
@@ -101,7 +101,7 @@ public class AccountServiceImpl implements AccountService {
 
         account = accountRepository.save(account);
 
-        notificationClient.sendNotification(NotificationRequest.builder()
+        notificationProducer.sendNotification(NotificationRequest.builder()
             .username(username)
             .message("Account updated successfully")
             .type("INFO")
@@ -124,7 +124,7 @@ public class AccountServiceImpl implements AccountService {
         }
 
         accountRepository.delete(account);
-        notificationClient.sendNotification(NotificationRequest.builder()
+        notificationProducer.sendNotification(NotificationRequest.builder()
             .username(username)
             .message("Account deleted successfully")
             .type("INFO")
@@ -152,7 +152,7 @@ public class AccountServiceImpl implements AccountService {
 
         bankAccount = bankAccountRepository.save(bankAccount);
 
-        notificationClient.sendNotification(NotificationRequest.builder()
+        notificationProducer.sendNotification(NotificationRequest.builder()
             .username(username)
             .message("Bank account created with currency " + request.getCurrency())
             .type("INFO")
@@ -186,7 +186,7 @@ public class AccountServiceImpl implements AccountService {
         }
 
         bankAccountRepository.delete(bankAccount);
-        notificationClient.sendNotification(NotificationRequest.builder()
+        notificationProducer.sendNotification(NotificationRequest.builder()
             .username(username)
             .message("Bank account deleted with currency " + bankAccount.getCurrency())
             .type("INFO")

@@ -1,0 +1,12 @@
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    retry:
+      max-attempts: ${KAFKA_RETRY_MAX_ATTEMPTS:5}
+      topic-suffix: ${KAFKA_RETRY_TOPIC_SUFFIX:-retry}
+      dlt-suffix: ${KAFKA_DLT_SUFFIX:-dlt}
+      auto-start-dlt-handler: ${KAFKA_AUTO_START_DLT_HANDLER:true}
+      backoff:
+        initial-interval: ${KAFKA_BACKOFF_INITIAL_INTERVAL:1000}
+        multiplier: ${KAFKA_BACKOFF_MULTIPLIER:2.0}
+        max-interval: ${KAFKA_BACKOFF_MAX_INTERVAL:10000}

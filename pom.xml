@@ -41,6 +41,7 @@
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <resilience4j.version>2.2.0</resilience4j.version>
         <testcontainers.version>1.21.3</testcontainers.version>
+        <kafka.version>3.9.0</kafka.version>
     </properties>
 
     <dependencyManagement>

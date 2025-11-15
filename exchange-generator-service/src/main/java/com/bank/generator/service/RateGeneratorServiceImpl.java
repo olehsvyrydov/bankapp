@@ -1,6 +1,6 @@
 package com.bank.generator.service;
 
-import com.bank.generator.client.ExchangeClient;
+import com.bank.generator.kafka.ExchangeRateProducer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.stereotype.Service;
@@ -16,8 +16,8 @@ public class RateGeneratorServiceImpl extends AbstractRateGeneratorService {
 
     private final ThreadLocalRandom random = ThreadLocalRandom.current();
 
-    public RateGeneratorServiceImpl(ExchangeClient exchangeClient, DiscoveryClient discoveryClient) {
-        super(exchangeClient, discoveryClient);
+    public RateGeneratorServiceImpl(ExchangeRateProducer exchangeRateProducer, DiscoveryClient discoveryClient) {
+        super(exchangeRateProducer, discoveryClient);
     }
 
     @Override
