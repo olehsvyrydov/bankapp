@@ -1,6 +1,5 @@
 package com.bank.notifications.controller;
 
-import com.bank.common.dto.contracts.notifications.NotificationRequest;
 import com.bank.notifications.entity.Notification;
 import com.bank.notifications.service.NotificationService;
 import com.bank.common.dto.ApiResponse;
@@ -18,12 +17,6 @@ public class NotificationController {
 
     public NotificationController(NotificationService notificationService) {
         this.notificationService = notificationService;
-    }
-
-    @PostMapping("/send")
-    public ResponseEntity<ApiResponse<Void>> sendNotification(@RequestBody NotificationRequest request) {
-        notificationService.sendNotification(request);
-        return ResponseEntity.ok(ApiResponse.success(null, "Notification sent"));
     }
 
     @GetMapping("/my")

@@ -20,8 +20,8 @@ dependencies:
     repository: "file://./charts/postgresql"
     condition: postgresql.enabled
   - name: kafka
-    version: "1.0.0"
-    repository: "file://./charts/kafka"
+    version: "30.1.9"
+    repository: "https://charts.bitnami.com/bitnami"
     condition: kafka.enabled
   - name: auth-server
     version: "1.0.0"

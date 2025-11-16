@@ -140,6 +140,13 @@ load_images() {
 deploy_app() {
     print_step "Deploying application to minikube..."
 
+    # Update Helm dependencies (downloads Kafka chart from Bitnami)
+    print_info "Updating Helm dependencies..."
+    helm dependency update ${HELM_CHART} || {
+        print_error "Failed to update Helm dependencies"
+        exit 1
+    }
+
     # Create namespace if it doesn't exist
     kubectl create namespace ${NAMESPACE} 2>/dev/null || print_info "Namespace ${NAMESPACE} already exists"
 
