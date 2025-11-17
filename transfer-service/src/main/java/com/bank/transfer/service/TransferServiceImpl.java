@@ -51,7 +51,7 @@ public class TransferServiceImpl implements TransferService {
     }
 
     @Override
-    public TransferResponse processTransfer(TransferRequest request, String username) {
+    public TransferResponse processTransfer(TransferRequest request, String userAlso I got errorname) {
         try {
             // FIX: Defensive null check for username
             if (username == null || username.isBlank()) {
