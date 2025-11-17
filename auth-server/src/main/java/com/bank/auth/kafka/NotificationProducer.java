@@ -2,6 +2,7 @@ package com.bank.auth.kafka;
 
 import com.bank.common.constants.KafkaTopics;
 import com.bank.common.dto.contracts.notifications.NotificationRequest;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -20,6 +21,17 @@ import java.util.concurrent.CompletableFuture;
 public class NotificationProducer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
+
+    /**
+     * Eagerly initialize Kafka producer on startup to avoid delays on first request
+     */
+    @PostConstruct
+    public void init() {
+        log.info("Initializing Kafka producer for notifications");
+        // This triggers the lazy initialization of the Kafka producer
+        kafkaTemplate.getProducerFactory().createProducer();
+        log.info("Kafka producer initialized successfully");
+    }
 
     /**
      * Sends notification message to Kafka topic.
