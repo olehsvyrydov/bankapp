@@ -37,6 +37,11 @@ data:
   # Logging
   LOGGING_LEVEL_ROOT: "INFO"
   LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: "INFO"
+  LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: "DEBUG"
+  LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB: "DEBUG"
+  LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB_SERVLET_MVC: "TRACE"
+  LOGGING_LEVEL_COM_BANK_COMMON_RESOLVER: "DEBUG"
+  LOGGING_LEVEL_COM_BANK_TRANSFER: "DEBUG"
   CLIENTS_GATEWAY_SERVICE_ID: {{ (.Values.global.services.gateway.name | default "bank-app-gateway-service.bank-app-dev") | quote }}
   CLIENTS_AUTH_SERVICE_ID: {{ (.Values.global.services.auth.name | default "bank-app-auth-server.bank-app-dev") | quote }}
 

@@ -40,8 +40,19 @@ public class CurrentUsernameArgumentResolver implements HandlerMethodArgumentRes
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not authenticated");
         }
 
-        log.debug("resolveUsername: authenticated user={}, type={}",
-            auth.getName(), auth.getClass().getSimpleName());
-        return auth.getName();
+        String username = auth.getName();
+        log.debug("resolveUsername: authenticated user={}, type={}, principal={}, principalClass={}",
+            username, auth.getClass().getSimpleName(), auth.getPrincipal(),
+            auth.getPrincipal() != null ? auth.getPrincipal().getClass().getSimpleName() : "null");
+
+        // Additional check: if username is null or empty, log error and throw exception
+        if (username == null || username.isBlank()) {
+            log.error("resolveUsername: authentication.getName() returned null or blank! auth={}, principal={}",
+                auth, auth.getPrincipal());
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                "User authentication principal is invalid - username is null or blank");
+        }
+
+        return username;
     }
 }
