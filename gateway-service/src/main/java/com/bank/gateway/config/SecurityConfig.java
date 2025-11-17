@@ -27,6 +27,8 @@ public class SecurityConfig {
                 registry
                     .pathMatchers("/actuator/**")
                     .permitAll()
+                    .pathMatchers(HttpMethod.GET, "/api/exchange/rates")
+                    .permitAll()
                     .pathMatchers(HttpMethod.POST, "/api/accounts/register")
                     .permitAll()
                     .pathMatchers(HttpMethod.POST, "/api/exchange/rates")

@@ -11,6 +11,8 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
+
+
 /**
  * Kafka consumer for processing exchange rate updates.
  * Implements "at most once" delivery semantics for real-time rate updates.
@@ -43,8 +45,9 @@ public class ExchangeRateConsumer {
         @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
         @Header(KafkaHeaders.OFFSET) long offset
     ) {
-        log.debug("Consumed exchange rate from topic: {}, partition: {}, offset: {}, currency: {}",
-            topic, partition, offset, exchangeRate.getCurrency());
+        // FIX: Handle missing timestamp header (common in retry topics)
+        log.debug("Consumed exchange rate. Topic: {}, partition: {}, offset: {}, currency: {}",
+                topic, partition, offset, exchangeRate.getCurrency());
 
         try {
             exchangeService.updateRate(

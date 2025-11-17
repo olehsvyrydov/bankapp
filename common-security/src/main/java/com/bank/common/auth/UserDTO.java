@@ -1,4 +1,4 @@
-package com.bank.common.dto.contracts.auth;
+package com.bank.common.auth;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

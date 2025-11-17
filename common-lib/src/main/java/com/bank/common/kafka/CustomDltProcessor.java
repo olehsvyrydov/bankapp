@@ -23,11 +23,31 @@ public class CustomDltProcessor {
         String topic = message.getHeaders().get(KafkaHeaders.RECEIVED_TOPIC, String.class);
         Integer partition = message.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION, Integer.class);
         Long offset = message.getHeaders().get(KafkaHeaders.OFFSET, Long.class);
-        String exceptionMessage = message.getHeaders().get(KafkaHeaders.EXCEPTION_MESSAGE, String.class);
+
+        // FIX: EXCEPTION_MESSAGE header can be either String or byte[]
+        String exceptionMessage = getExceptionMessage(message);
 
         Object payload = message.getPayload();
 
         log.warn("DLT_MESSAGE: topic={}, partition={}, offset={}, payload={}, error={}",
             topic, partition, offset, payload, exceptionMessage);
+    }
+
+    /**
+     * Safely extracts exception message from headers, handling both String and byte[] types.
+     */
+    private String getExceptionMessage(Message<?> message) {
+        Object exceptionHeader = message.getHeaders().get(KafkaHeaders.EXCEPTION_MESSAGE);
+        if (exceptionHeader == null) {
+            return null;
+        }
+
+        if (exceptionHeader instanceof String) {
+            return (String) exceptionHeader;
+        } else if (exceptionHeader instanceof byte[]) {
+            return new String((byte[]) exceptionHeader);
+        } else {
+            return exceptionHeader.toString();
+        }
     }
 }

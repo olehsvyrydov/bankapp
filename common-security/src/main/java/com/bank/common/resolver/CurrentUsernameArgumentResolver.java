@@ -32,11 +32,14 @@ public class CurrentUsernameArgumentResolver implements HandlerMethodArgumentRes
         WebDataBinderFactory binderFactory) throws Exception
     {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth instanceof AnonymousAuthenticationToken token)
+
+        // FIX: Check for null authentication
+        if (auth == null || auth instanceof AnonymousAuthenticationToken)
         {
-            log.warn("resolveUsername: authentication missing or anonymous. Authentication={}", token);
+            log.warn("resolveUsername: authentication missing or anonymous. Authentication={}", auth);
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not authenticated");
         }
+
         log.debug("resolveUsername: authenticated user={}, type={}",
             auth.getName(), auth.getClass().getSimpleName());
         return auth.getName();

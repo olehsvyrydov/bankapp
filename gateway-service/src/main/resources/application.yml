@@ -38,6 +38,10 @@ spring:
               uri: http://bank-app-transfer-service.bank-app-dev.svc.cluster.local:8083
               predicates:
                 - Path=/api/transfers/**
+            - id: front-ui-exchange-rates
+              uri: http://bank-app-front-ui.bank-app-dev.svc.cluster.local:8090
+              predicates:
+                - Path=/api/exchange/rates
             - id: exchange-service
               uri: http://bank-app-exchange-service.bank-app-dev.svc.cluster.local:8084
               predicates:

@@ -1,5 +1,5 @@
 
-package com.bank.common.dto.contracts.auth;
+package com.bank.common.auth;
 
 import com.bank.common.validation.MinAge;
 import jakarta.validation.constraints.Email;

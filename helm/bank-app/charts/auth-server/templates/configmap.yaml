@@ -34,5 +34,10 @@ data:
   LOGGING_LEVEL_ROOT: "INFO"
   LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: "INFO"
   SPRING_CLOUD_KUBERNETES_LOADBALANCER_MODE: {{ default "SERVICE" .Values.global.loadBalancer.mode | quote }}
-  CLIENTS_GATEWAY_SERVICE_ID: {{ (.Values.global.services.gateway.name | default "bank-app-gateway-service") | quote }}
-  CLIENTS_AUTH_SERVICE_ID: {{ (.Values.global.services.auth.name | default "bank-app-auth-server") | quote }}
+  CLIENTS_GATEWAY_SERVICE_ID: {{ (.Values.global.services.gateway.name | default "bank-app-gateway-service.bank-app-dev") | quote }}
+  CLIENTS_AUTH_SERVICE_ID: {{ (.Values.global.services.auth.name | default "bank-app-auth-server.bank-app-dev") | quote }}
+
+  # Disable Eureka service discovery (using Kubernetes service discovery instead)
+  EUREKA_CLIENT_ENABLED: "false"
+  EUREKA_CLIENT_REGISTER_WITH_EUREKA: "false"
+  EUREKA_CLIENT_FETCH_REGISTRY: "false"

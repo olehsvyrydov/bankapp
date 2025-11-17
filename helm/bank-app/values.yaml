@@ -3,6 +3,10 @@ global:
   namespace: bank-app-dev
   environment: dev
 
+  # Security settings
+  security:
+    allowInsecureImages: true  # Allow non-Bitnami images for Kafka
+
   # Global image settings
   image:
     registry: docker.io
@@ -28,6 +32,8 @@ global:
       name: bank-app-auth-server
     gateway:
       name: bank-app-gateway-service
+    exchange:
+      name: bank-app-exchange-service
 
   discovery:
     serviceAccount:
@@ -74,9 +80,17 @@ postgresql:
     - notifications
 
 # Kafka subchart configuration (Bitnami Kafka Chart)
+# NOTE: Disabled - using custom Kafka deployment instead
 kafka:
-  enabled: true
+  enabled: false
   fullnameOverride: bank-app-kafka
+
+  # Image configuration - Use Apache Kafka official image
+  image:
+    registry: docker.io
+    repository: apache/kafka
+    tag: "4.1.1"
+    pullPolicy: IfNotPresent
 
   # Kafka cluster configuration
   controller:
@@ -87,6 +101,11 @@ kafka:
   # Topic auto-provisioning
   provisioning:
     enabled: true
+    #    image:
+    #      registry: docker.io
+    #      repository: apache/kafka
+    #      tag: "4.1.1"
+    #      pullPolicy: IfNotPresent
     topics:
       - name: bank.notifications
         partitions: 3
@@ -119,6 +138,24 @@ kafka:
     type: ClusterIP
     ports:
       client: 9092
+
+# Custom Kafka deployment configuration (for Apache Kafka)
+customKafka:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: apache/kafka
+    tag: "4.1.1"
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  service:
+    name: bank-app-kafka
+    port: 9092
+  topics:
+    - name: bank.notifications
+      partitions: 3
+    - name: bank.exchange.rates
+      partitions: 3
 
 # Auth Server subchart configuration
 auth-server:

@@ -5,48 +5,8 @@ spring:
   application:
     name: exchange-generator-service
 
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://bank-app-auth-server:9100
-      client:
-        registration:
-          exchange-generator-service:
-            client-id: exchange-generator-service
-            client-secret: exchange-generator-secret
-            authorization-grant-type: client_credentials
-            scope: exchange.generate,exchange.read,gateway
-        provider:
-          exchange-generator-service:
-            token-uri: http://bank-app-auth-server:9100/oauth2/token
-
-  cloud:
-    openfeign:
-      client:
-        config:
-          default:
-            connectTimeout: 5000
-            readTimeout: 10000
-
-eureka:
-  client:
-    service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
-
-security:
-  internal-client:
-    registration-id: exchange-generator-service
-    forward-user-token: false
-
 management:
   endpoints:
     web:
       exposure:
         include: health,info
-
-clients:
-  gateway:
-    service-id: ${GATEWAY_SERVICE_ID:bank-app-gateway-service}
-  auth:
-    service-id: ${AUTH_SERVICE_ID:bank-app-auth-server}

@@ -46,7 +46,7 @@ oauth2:
 # Liveness and readiness probe configuration
 livenessProbe:
   enabled: true
-  initialDelaySeconds: 90
+  initialDelaySeconds: 180
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 6

@@ -34,7 +34,7 @@ public class ExchangeKafkaProducerConfig {
         configProps.put(ProducerConfig.RETRIES_CONFIG, 0);
         configProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, false);
         configProps.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 1);
-        configProps.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
+        configProps.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, true);
 
         return new DefaultKafkaProducerFactory<>(configProps);
     }

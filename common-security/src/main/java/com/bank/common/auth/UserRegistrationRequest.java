@@ -1,4 +1,4 @@
-package com.bank.common.dto.contracts.auth;
+package com.bank.common.auth;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

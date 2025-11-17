@@ -128,12 +128,62 @@ load_images() {
         fi
     done
 
+    # Load Kafka image from Apache (custom Kafka deployment)
+    # Extract Kafka image configuration from Helm values (customKafka section)
+    print_info "Loading Apache Kafka image for custom Kafka deployment..."
+
+    KAFKA_REGISTRY=$(helm show values ${HELM_CHART} 2>/dev/null | grep -A 3 "^customKafka:" | grep -A 3 "image:" | grep "registry:" | head -1 | awk '{print $2}' | tr -d '"')
+    KAFKA_REPOSITORY=$(helm show values ${HELM_CHART} 2>/dev/null | grep -A 4 "^customKafka:" | grep -A 4 "image:" | grep "repository:" | head -1 | awk '{print $2}' | tr -d '"')
+    KAFKA_TAG=$(helm show values ${HELM_CHART} 2>/dev/null | grep -A 5 "^customKafka:" | grep -A 5 "image:" | grep "tag:" | head -1 | awk '{print $2}' | tr -d '"')
+
+    KAFKA_IMAGE="${KAFKA_REGISTRY}/${KAFKA_REPOSITORY}:${KAFKA_TAG}"
+    print_info "Kafka image from Helm values (customKafka): ${KAFKA_IMAGE}"
+
+    print_info "Pulling ${KAFKA_IMAGE}..."
+    if docker pull "${KAFKA_IMAGE}"; then
+        print_info "Loading ${KAFKA_IMAGE} into minikube..."
+        minikube image load "${KAFKA_IMAGE}" || {
+            print_warning "Failed to load Kafka image into minikube"
+        }
+        print_info "Kafka image loaded successfully"
+    else
+        print_error "Failed to pull Kafka image"
+        print_warning "Kafka may not start properly without this image"
+    fi
+
     print_info "Verifying images in minikube:"
     docker images | grep "^${IMAGE_PREFIX}" | grep "${TAG}" || print_warning "No images found with prefix [${IMAGE_PREFIX}]"
 
     # Reset docker environment
 #    eval $(minikube docker-env -u)
-    print_info "Images loaded into minikube successfully"
+    print_info "All images loaded into minikube successfully"
+}
+
+# Test deployment using Helm tests
+test_deployment() {
+    print_step "Running Helm tests..."
+
+    # Check if release exists
+    if ! helm list -n ${NAMESPACE} | grep -q ${HELM_RELEASE}; then
+        print_error "Helm release ${HELM_RELEASE} not found in namespace ${NAMESPACE}"
+        print_info "Please deploy the application first using: $0 deploy"
+        exit 1
+    fi
+
+    # Run Helm tests
+    print_info "Executing Helm test suite for ${HELM_RELEASE}..."
+    if helm test ${HELM_RELEASE} -n ${NAMESPACE} --logs; then
+        echo ""
+        print_info "✓ All Helm tests passed successfully!"
+        return 0
+    else
+        echo ""
+        print_error "✗ Some Helm tests failed!"
+        print_info "To debug failed tests, check test pod logs:"
+        echo "  kubectl get pods -n ${NAMESPACE} | grep test"
+        echo "  kubectl logs <test-pod-name> -n ${NAMESPACE}"
+        return 1
+    fi
 }
 
 # Deploy application using Helm
@@ -178,6 +228,16 @@ deploy_app() {
     echo ""
     print_info "Checking pod status..."
     kubectl get pods -n ${NAMESPACE}
+
+    echo ""
+    print_info "Running Helm tests to verify deployment..."
+    if test_deployment; then
+        echo ""
+        print_info "Deployment verification completed successfully!"
+    else
+        echo ""
+        print_warning "Deployment completed but some tests failed. Please check the logs above."
+    fi
 
     echo ""
     print_info "If something is not Ready, inspect with:"
@@ -243,7 +303,8 @@ usage() {
     echo "  all           - Run complete setup (start + load + deploy)"
     echo "  start         - Start minikube cluster"
     echo "  load          - Build images directly in minikube's Docker daemon"
-    echo "  deploy        - Deploy application using Helm"
+    echo "  deploy        - Deploy application using Helm (includes tests)"
+    echo "  test          - Run Helm tests on deployed application"
     echo "  redeploy      - Clean and deploy again"
     echo "  clean         - Remove deployment and namespace"
     echo "  stop          - Stop minikube cluster"
@@ -255,6 +316,8 @@ usage() {
     echo ""
     echo "Examples:"
     echo "  $0 all                    # Complete setup"
+    echo "  $0 deploy                 # Deploy and run tests"
+    echo "  $0 test                   # Run tests only"
     echo "  IMAGE_TAG=1.0.0 $0 load   # Load images with specific tag"
 }
 
@@ -310,6 +373,9 @@ main() {
             ;;
         deploy)
             deploy_app
+            ;;
+        test)
+            test_deployment
             ;;
         redeploy)
             clean

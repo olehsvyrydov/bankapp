@@ -1,6 +1,6 @@
 spring:
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     retry:
       max-attempts: ${KAFKA_RETRY_MAX_ATTEMPTS:5}
       topic-suffix: ${KAFKA_RETRY_TOPIC_SUFFIX:-retry}

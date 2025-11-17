@@ -2,7 +2,7 @@
 package com.bank.frontend.client;
 
 import com.bank.common.dto.contracts.accounts.ChangePasswordRequest;
-import com.bank.common.dto.contracts.auth.*;
+import com.bank.common.auth.*;
 import com.bank.frontend.config.AuthClientConfig;
 import jakarta.validation.Valid;
 import org.springframework.cloud.openfeign.FeignClient;

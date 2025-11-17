@@ -2,7 +2,7 @@ package com.bank.auth.controller;
 
 import com.bank.auth.kafka.NotificationProducer;
 import com.bank.common.dto.contracts.accounts.ChangePasswordRequest;
-import com.bank.common.dto.contracts.auth.UserRegistrationRequest;
+import com.bank.common.auth.UserRegistrationRequest;
 import com.bank.auth.service.UserService;
 import com.bank.common.dto.contracts.notifications.NotificationRequest;
 import lombok.RequiredArgsConstructor;

@@ -2,33 +2,38 @@ package com.bank.generator.kafka;
 
 import com.bank.common.constants.KafkaTopics;
 import com.bank.common.dto.contracts.exchange.ExchangeRateDTO;
-import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.TestPropertySource;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Integration tests for ExchangeRateProducer with embedded Kafka.
  */
-@SpringBootTest
+@SpringBootTest(properties = {
+        "scheduling.enabled=false",
+        "generator.schedule=-" // Disable scheduling for tests
+})
 @EmbeddedKafka(
     partitions = 1,
     topics = {KafkaTopics.EXCHANGE_RATE_TOPIC},
@@ -41,10 +46,8 @@ class ExchangeRateProducerIntegrationTest {
 
     @Autowired
     private ExchangeRateProducer exchangeRateProducer;
-
     @Autowired
     private EmbeddedKafkaBroker embeddedKafkaBroker;
-
     private Consumer<String, ExchangeRateDTO> consumer;
 
     @BeforeEach
@@ -76,8 +79,11 @@ class ExchangeRateProducerIntegrationTest {
 
         exchangeRateProducer.sendExchangeRate(exchangeRate);
 
+//        ConsumerRecords<String, ExchangeRateDTO> records = KafkaTestUtils.getRecords(consumer, Duration.ofSeconds(10));
+//        System.out.println("Consumer records count: " + records.count());
+//        System.out.println("Record: " + records.);
         ConsumerRecord<String, ExchangeRateDTO> received = KafkaTestUtils.getSingleRecord(consumer, KafkaTopics.EXCHANGE_RATE_TOPIC, Duration.ofSeconds(10));
-
+        System.out.println("Received record: " + received);
         assertThat(received).isNotNull();
         assertThat(received.key()).isEqualTo("USD");
         assertThat(received.value()).isNotNull();

@@ -2,12 +2,12 @@ package com.bank.auth.controller;
 
 import com.bank.auth.service.TokenService;
 import com.bank.auth.service.UserService;
-import com.bank.common.dto.contracts.auth.AuthResponse;
-import com.bank.common.dto.contracts.auth.LoginRequest;
-import com.bank.common.dto.contracts.auth.RefreshTokenRequest;
-import com.bank.common.dto.contracts.auth.TokenResponse;
-import com.bank.common.dto.contracts.auth.TokenValidationResponse;
-import com.bank.common.dto.contracts.auth.UserRegistrationRequest;
+import com.bank.common.auth.AuthResponse;
+import com.bank.common.auth.LoginRequest;
+import com.bank.common.auth.RefreshTokenRequest;
+import com.bank.common.auth.TokenResponse;
+import com.bank.common.auth.TokenValidationResponse;
+import com.bank.common.auth.UserRegistrationRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

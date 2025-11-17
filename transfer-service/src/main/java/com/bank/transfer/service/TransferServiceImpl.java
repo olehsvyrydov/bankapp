@@ -53,6 +53,11 @@ public class TransferServiceImpl implements TransferService {
     @Override
     public TransferResponse processTransfer(TransferRequest request, String username) {
         try {
+            // FIX: Defensive null check for username
+            if (username == null || username.isBlank()) {
+                throw new BusinessException("User authentication is required");
+            }
+
             // Validate that either toBankAccountId or recipientEmail is provided
             if (request.getToBankAccountId() == null &&
                 (request.getRecipientEmail() == null || request.getRecipientEmail().isBlank())) {
