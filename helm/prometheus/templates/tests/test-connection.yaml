@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "bank-app-prometheus.fullname" . }}-test-connection"
+  labels:
+    {{- include "bank-app-prometheus.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+spec:
+  containers:
+    - name: wget
+      image: busybox:1.36
+      command: ['sh', '-c']
+      args:
+        - |
+          # Test Prometheus server health endpoint
+          wget --spider --timeout=5 {{ include "bank-app-prometheus.fullname" . }}-prometheus-server:9090/-/healthy &&
+          echo "Prometheus server is healthy" &&
+          # Test if Prometheus is ready
+          wget --spider --timeout=5 {{ include "bank-app-prometheus.fullname" . }}-prometheus-server:9090/-/ready &&
+          echo "Prometheus server is ready"
+  restartPolicy: Never
