@@ -18,11 +18,8 @@ management:
       # Read timeout in seconds
       read-timeout: ${ZIPKIN_READ_TIMEOUT:10s}
 
-spring:
-  application:
-    # Application name will be used as service name in Zipkin traces
-    # Each microservice should override this in their own application.yml
-    name: ${spring.application.name:unknown-service}
+# Note: spring.application.name is used as the service name in Zipkin traces.
+# Each microservice must define its own spring.application.name in application.yml
 
 # Logging configuration for tracing
 # This ensures trace and span IDs are included in logs
