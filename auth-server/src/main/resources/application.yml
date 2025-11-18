@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: auth-server
+  profiles:
+    include: tracing
 
   datasource:
     url: jdbc:postgresql://localhost:5432/bankdb?currentSchema=auth

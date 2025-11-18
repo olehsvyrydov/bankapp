@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: blocker-service
+  profiles:
+    include: tracing
   config:
     import: optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}
 

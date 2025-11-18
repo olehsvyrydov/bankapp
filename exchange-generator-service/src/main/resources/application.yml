@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: exchange-generator-service
+  profiles:
+    include: tracing
 
 management:
   endpoints:
