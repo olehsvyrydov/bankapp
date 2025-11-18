@@ -1,0 +1,39 @@
+# Common tracing configuration for all microservices
+# This configuration enables distributed tracing with Zipkin
+
+management:
+  tracing:
+    sampling:
+      # Sampling probability: 1.0 = 100% for dev, 0.1 = 10% for production
+      # This controls how many traces are sent to Zipkin
+      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+    enabled: true
+  zipkin:
+    tracing:
+      # Zipkin endpoint for sending traces
+      # In Kubernetes, this will be the Zipkin service DNS name
+      endpoint: ${ZIPKIN_URL:http://bank-app-zipkin:9411}/api/v2/spans
+      # Connection timeout in seconds
+      connect-timeout: ${ZIPKIN_CONNECT_TIMEOUT:1s}
+      # Read timeout in seconds
+      read-timeout: ${ZIPKIN_READ_TIMEOUT:10s}
+
+spring:
+  application:
+    # Application name will be used as service name in Zipkin traces
+    # Each microservice should override this in their own application.yml
+    name: ${spring.application.name:unknown-service}
+
+# Logging configuration for tracing
+# This ensures trace and span IDs are included in logs
+logging:
+  pattern:
+    # Add traceId and spanId to log pattern
+    # Format: [traceId,spanId]
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+
+# Note: For production, consider:
+# - Reducing sampling probability to 0.1 (10%) to reduce overhead
+# - Using async reporting to avoid blocking
+# - Configuring appropriate timeouts based on network conditions
+# - Using persistent storage for Zipkin (e.g., Elasticsearch or MySQL)
