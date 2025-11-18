@@ -5,7 +5,7 @@ spring:
   application:
     name: exchange-generator-service
   profiles:
-    include: tracing
+    include: tracing,metrics
 
 management:
   endpoints:
