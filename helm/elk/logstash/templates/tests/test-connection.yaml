@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "bank-app-logstash.fullname" . }}-test-connection"
+  labels:
+    {{- include "bank-app-logstash.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+spec:
+  containers:
+    - name: curl
+      image: curlimages/curl:8.1.0
+      command: ['sh', '-c']
+      args:
+        - |
+          # Test Logstash node info API
+          curl -f -s http://{{ include "bank-app-logstash.fullname" . }}-logstash:9600/ &&
+          echo "Logstash is accessible" &&
+          # Check pipeline status
+          curl -s http://{{ include "bank-app-logstash.fullname" . }}-logstash:9600/_node/stats/pipelines &&
+          echo "Logstash pipeline stats available"
+  restartPolicy: Never
