@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "bank-app-kibana.fullname" . }}-test-connection"
+  labels:
+    {{- include "bank-app-kibana.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+spec:
+  containers:
+    - name: curl
+      image: curlimages/curl:8.1.0
+      command: ['sh', '-c']
+      args:
+        - |
+          # Test Kibana status API
+          curl -f -s http://{{ include "bank-app-kibana.fullname" . }}-kibana:5601/api/status &&
+          echo "Kibana is accessible" &&
+          # Check if Kibana is available
+          curl -s http://{{ include "bank-app-kibana.fullname" . }}-kibana:5601/api/status | grep -q '"level":"available"' &&
+          echo "Kibana is available and healthy"
+  restartPolicy: Never
