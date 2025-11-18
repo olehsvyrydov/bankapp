@@ -8,6 +8,7 @@ import com.bank.common.auth.RefreshTokenRequest;
 import com.bank.common.auth.TokenResponse;
 import com.bank.common.auth.TokenValidationResponse;
 import com.bank.common.auth.UserRegistrationRequest;
+import com.bank.common.metrics.CustomMetricsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,7 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
     private final TokenService tokenService;
+    private final CustomMetricsService metricsService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody UserRegistrationRequest request) {
@@ -57,9 +59,12 @@ public class AuthController {
             TokenResponse response = tokenService.createTokenResponse(
                 userService.findByUsername(authentication.getName()),
                 request.isRememberMe());
+
+            metricsService.recordLoginSuccess(request.getUsername());
             return ResponseEntity.ok(response);
         } catch (AuthenticationException ex) {
             log.warn("Authentication failed for user {}: {}", request.getUsername(), ex.getMessage());
+            metricsService.recordLoginFailure(request.getUsername());
             throw new BadCredentialsException("Invalid username or password");
         }
     }
