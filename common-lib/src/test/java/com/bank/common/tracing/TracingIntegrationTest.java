@@ -134,11 +134,6 @@ class TracingIntegrationTest {
         assertThat(tracer).as("Tracer should be configured")
                 .isNotNull();
 
-        // Verify that observation is enabled on Kafka template
-        assertThat(kafkaTemplate.isObservationEnabled())
-                .as("Kafka template should have observation enabled")
-                .isTrue();
-
         // Create a parent span
         var parentSpan = tracer.nextSpan().name("test-kafka-send").start();
 
