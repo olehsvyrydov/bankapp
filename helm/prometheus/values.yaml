@@ -1,0 +1,114 @@
+# Default values for bank-app-prometheus
+# This is a wrapper chart for the official Prometheus Helm chart
+
+prometheus:
+  # Prometheus server configuration
+  server:
+    # Retention period
+    retention: "15d"
+
+    # Resource limits
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+
+    # Storage configuration (emptyDir for dev, PVC for prod)
+    persistentVolume:
+      enabled: false
+      # Uncomment below for production with persistent storage
+      # enabled: true
+      # size: 50Gi
+      # storageClass: standard
+
+    # Global scrape interval
+    global:
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      evaluation_interval: 15s
+
+    # Service configuration
+    service:
+      type: ClusterIP
+      servicePort: 9090
+
+    # Enable readiness and liveness probes
+    readinessProbeInitialDelay: 30
+    readinessProbePeriodSeconds: 5
+    livenessProbeInitialDelay: 30
+    livenessProbePeriodSeconds: 15
+
+  # ServiceMonitor for auto-discovery of microservices
+  # Note: Requires Prometheus Operator CRDs
+  serviceMonitor:
+    enabled: true
+    # Additional labels for ServiceMonitor selector
+    additionalLabels:
+      app: bank-app
+
+  # Alert manager configuration (optional for dev)
+  alertmanager:
+    enabled: false
+    # Uncomment for production
+    # enabled: true
+    # persistentVolume:
+    #   enabled: true
+    #   size: 10Gi
+
+  # Node exporter (optional, for node metrics)
+  nodeExporter:
+    enabled: false
+
+  # Kube state metrics (optional, for k8s metrics)
+  kubeStateMetrics:
+    enabled: false
+
+  # Pushgateway (optional)
+  pushgateway:
+    enabled: false
+
+  # Extra scrape configs for microservices
+  extraScrapeConfigs: |
+    - job_name: 'bank-microservices'
+      kubernetes_sd_configs:
+        - role: pod
+          namespaces:
+            names:
+              - bank-app-dev
+              - bank-app-test
+              - bank-app-prod
+      relabel_configs:
+        # Only scrape pods with prometheus.io/scrape: "true" annotation
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+          action: keep
+          regex: true
+        # Use the port from prometheus.io/port annotation, default to pod port
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port, __meta_kubernetes_pod_container_port_number]
+          action: replace
+          target_label: __address__
+          regex: ([^:]+)(?::\d+)?;(\d+)
+          replacement: $1:$2
+        # Use the path from prometheus.io/path annotation, default to /actuator/prometheus
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+          action: replace
+          target_label: __metrics_path__
+          regex: (.+)
+          replacement: $1
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+          action: replace
+          target_label: __metrics_path__
+          regex: ^$
+          replacement: /actuator/prometheus
+        # Add pod and namespace labels
+        - source_labels: [__meta_kubernetes_namespace]
+          action: replace
+          target_label: kubernetes_namespace
+        - source_labels: [__meta_kubernetes_pod_name]
+          action: replace
+          target_label: kubernetes_pod_name
+        - source_labels: [__meta_kubernetes_pod_label_app]
+          action: replace
+          target_label: application
