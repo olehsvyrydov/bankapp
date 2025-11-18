@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class CustomMetricsService {
 
+    private final MeterRegistry meterRegistry;
     private final Counter loginSuccessCounter;
     private final Counter loginFailureCounter;
     private final Counter transferFailureCounter;
@@ -18,6 +19,7 @@ public class CustomMetricsService {
     private final Counter exchangeRateUpdateFailureCounter;
 
     public CustomMetricsService(MeterRegistry registry) {
+        this.meterRegistry = registry;
         this.loginSuccessCounter = Counter.builder("login_attempts_total")
             .tag("status", "success")
             .description("Total successful login attempts")
@@ -65,7 +67,7 @@ public class CustomMetricsService {
         Counter.builder("transfer_failed_total")
             .tag("reason", reason)
             .description("Total failed transfer operations")
-            .register(transferFailureCounter.getId().getMeterRegistry())
+            .register(meterRegistry)
             .increment();
         log.debug("Recorded failed transfer from {} to {} with reason: {}", fromAccount, toAccount, reason);
     }
