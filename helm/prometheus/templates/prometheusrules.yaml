@@ -1,0 +1,150 @@
+{{- if .Values.prometheus.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "bank-app-prometheus.fullname" . }}-rules
+  labels:
+    {{- include "bank-app-prometheus.labels" . | nindent 4 }}
+    prometheus: kube-prometheus
+spec:
+  groups:
+    - name: bank-app-http-errors
+      interval: 30s
+      rules:
+        - alert: HighErrorRate
+          expr: |
+            (
+              sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m])) by (application)
+              /
+              sum(rate(http_server_requests_seconds_count[5m])) by (application)
+            ) > 0.05
+          for: 5m
+          labels:
+            severity: critical
+            component: http
+          annotations:
+            summary: "High 5xx error rate on {{ $labels.application }}"
+            description: "Application {{ $labels.application }} has {{ $value | humanizePercentage }} error rate (threshold: 5%)"
+
+    - name: bank-app-latency
+      interval: 30s
+      rules:
+        - alert: HighResponseTime
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_server_requests_seconds_bucket[5m])) by (le, application)
+            ) > 1
+          for: 5m
+          labels:
+            severity: warning
+            component: http
+          annotations:
+            summary: "High response time on {{ $labels.application }}"
+            description: "Application {{ $labels.application }} has p95 latency of {{ $value }}s (threshold: 1s)"
+
+    - name: bank-app-authentication
+      interval: 30s
+      rules:
+        - alert: FailedLoginSpike
+          expr: |
+            sum(rate(login_attempts_total{status="failure"}[1m])) by (application) > 10
+          for: 1m
+          labels:
+            severity: warning
+            component: auth
+          annotations:
+            summary: "High rate of failed login attempts"
+            description: "{{ $labels.application }} has {{ $value }} failed login attempts per minute (threshold: 10/min)"
+
+    - name: bank-app-transfers
+      interval: 30s
+      rules:
+        - alert: HighTransferFailureRate
+          expr: |
+            sum(rate(transfer_failed_total[1m])) by (application, reason) > 5
+          for: 1m
+          labels:
+            severity: warning
+            component: transfer
+          annotations:
+            summary: "High rate of failed transfers"
+            description: "{{ $labels.application }} has {{ $value }} failed transfers per minute due to {{ $labels.reason }} (threshold: 5/min)"
+
+    - name: bank-app-exchange-rates
+      interval: 60s
+      rules:
+        - alert: ExchangeRatesNotUpdated
+          expr: |
+            (time() - exchange_rate_last_update_timestamp_seconds) > 3600
+          for: 5m
+          labels:
+            severity: critical
+            component: exchange
+          annotations:
+            summary: "Exchange rates not updated"
+            description: "Exchange rates have not been updated for {{ $value | humanizeDuration }}"
+
+        - alert: ExchangeRateUpdateFailure
+          expr: |
+            sum(rate(exchange_rate_update{status="failure"}[5m])) by (application) > 0
+          for: 5m
+          labels:
+            severity: warning
+            component: exchange
+          annotations:
+            summary: "Exchange rate update failures"
+            description: "{{ $labels.application }} is experiencing exchange rate update failures"
+
+    - name: bank-app-notifications
+      interval: 30s
+      rules:
+        - alert: NotificationFailures
+          expr: |
+            sum(rate(notification_failed_total[1m])) by (application) > 3
+          for: 1m
+          labels:
+            severity: warning
+            component: notifications
+          annotations:
+            summary: "High rate of notification failures"
+            description: "{{ $labels.application }} has {{ $value }} notification failures per minute (threshold: 3/min)"
+
+    - name: bank-app-security
+      interval: 30s
+      rules:
+        - alert: HighBlockedOperationsRate
+          expr: |
+            sum(rate(blocked_operations_total[5m])) by (application) > 10
+          for: 5m
+          labels:
+            severity: warning
+            component: security
+          annotations:
+            summary: "High rate of blocked operations"
+            description: "{{ $labels.application }} has {{ $value }} blocked operations per minute"
+
+    - name: bank-app-jvm
+      interval: 30s
+      rules:
+        - alert: HighMemoryUsage
+          expr: |
+            (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) > 0.9
+          for: 5m
+          labels:
+            severity: warning
+            component: jvm
+          annotations:
+            summary: "High heap memory usage on {{ $labels.application }}"
+            description: "Application {{ $labels.application }} is using {{ $value | humanizePercentage }} of heap memory"
+
+        - alert: HighGCTime
+          expr: |
+            rate(jvm_gc_pause_seconds_sum[5m]) > 0.1
+          for: 5m
+          labels:
+            severity: warning
+            component: jvm
+          annotations:
+            summary: "High GC time on {{ $labels.application }}"
+            description: "Application {{ $labels.application }} is spending {{ $value | humanizePercentage }} time in GC"
+{{- end }}
