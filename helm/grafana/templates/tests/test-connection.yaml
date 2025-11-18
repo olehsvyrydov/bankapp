@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "bank-app-grafana.fullname" . }}-test-connection"
+  labels:
+    {{- include "bank-app-grafana.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+spec:
+  containers:
+    - name: wget
+      image: busybox:1.36
+      command: ['sh', '-c']
+      args:
+        - |
+          # Test Grafana health endpoint
+          wget --spider --timeout=10 {{ include "bank-app-grafana.fullname" . }}-grafana:3000/api/health &&
+          echo "Grafana is healthy" &&
+          # Test Grafana API
+          wget -O- --timeout=10 {{ include "bank-app-grafana.fullname" . }}-grafana:3000/api/health | grep -q "ok" &&
+          echo "Grafana API is responding"
+  restartPolicy: Never
