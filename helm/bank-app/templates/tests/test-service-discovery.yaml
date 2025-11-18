@@ -7,7 +7,7 @@ metadata:
     {{- include "bank-app.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-delete-policy": before-hook-creation
 spec:
   restartPolicy: Never
   containers:
@@ -17,13 +17,19 @@ spec:
       args:
         - |
           echo "Testing Kubernetes DNS service discovery..."
+          NAMESPACE="{{ .Values.global.namespace }}"
+          RELEASE="{{ .Release.Name }}"
 
           # Test DNS resolution for all services
           SERVICES="postgresql auth-server accounts-service transfer-service cash-service exchange-service exchange-generator-service notifications-service blocker-service gateway-service front-ui"
+          {{- if .Values.kafka.enabled }}
+          SERVICES="$SERVICES kafka"
+          {{- end }}
 
           for service in $SERVICES; do
-            echo "Testing DNS resolution for: {{ .Release.Name }}-$service"
-            nslookup {{ .Release.Name }}-$service || exit 1
+            FQDN="${RELEASE}-${service}.${NAMESPACE}.svc.cluster.local"
+            echo "Testing DNS resolution for: $FQDN"
+            nslookup "$FQDN" >/dev/null 2>&1 || exit 1
             echo "DNS resolution successful for $service ✓"
           done
 
@@ -43,6 +49,11 @@ spec:
 
           nc -zv {{ .Release.Name }}-gateway-service {{ index .Values "gateway-service" "service" "port" }} || exit 1
           echo "Gateway Service endpoint accessible ✓"
+
+          {{- if .Values.kafka.enabled }}
+          nc -zv {{ .Release.Name }}-kafka 9092 || exit 1
+          echo "Kafka endpoint accessible ✓"
+          {{- end }}
 
           echo ""
           echo "All service discovery tests passed!"

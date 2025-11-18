@@ -4,6 +4,7 @@ metadata:
   name: {{ include "exchange-service.fullname" . }}
   labels:
     {{- include "exchange-service.labels" . | nindent 4 }}
+    spring.cloud.kubernetes.discovery.service-name: exchange-service
 spec:
   type: {{ .Values.service.type }}
   ports:

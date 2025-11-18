@@ -263,10 +263,7 @@
         <h2 th:text="#{exchange.title}">Exchange Rates</h2>
 
         <div class="exchange-rates">
-            <div th:if="${exchangeRates == null or #lists.isEmpty(exchangeRates)}" class="info-text" th:text="#{exchange.loading}">
-                Unable to load exchange rates right now. Please try again later.
-            </div>
-            <table th:if="${exchangeRates != null and !exchangeRates.isEmpty()}">
+            <table>
                 <thead>
                 <tr>
                     <th th:text="#{exchange.currency}">Currency</th>
@@ -275,7 +272,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="rate : ${exchangeRates}">
+                <tr th:each="rate : ${exchangeRates}" th:if="${exchangeRates != null}">
                     <td th:text="${rate.currency}"></td>
                     <td th:text="${#numbers.formatDecimal(rate.buyRate, 1, 2)}"></td>
                     <td th:text="${#numbers.formatDecimal(rate.sellRate, 1, 2)}"></td>

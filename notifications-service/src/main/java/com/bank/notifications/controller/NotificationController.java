@@ -1,11 +1,10 @@
 package com.bank.notifications.controller;
 
-import com.bank.common.dto.contracts.notifications.NotificationRequest;
+import com.bank.common.annotations.CurrentUsername;
 import com.bank.notifications.entity.Notification;
 import com.bank.notifications.service.NotificationService;
 import com.bank.common.dto.ApiResponse;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,15 +19,8 @@ public class NotificationController {
         this.notificationService = notificationService;
     }
 
-    @PostMapping("/send")
-    public ResponseEntity<ApiResponse<Void>> sendNotification(@RequestBody NotificationRequest request) {
-        notificationService.sendNotification(request);
-        return ResponseEntity.ok(ApiResponse.success(null, "Notification sent"));
-    }
-
     @GetMapping("/my")
-    public ResponseEntity<ApiResponse<List<Notification>>> getMyNotifications(Authentication authentication) {
-        String username = authentication.getName();
+    public ResponseEntity<ApiResponse<List<Notification>>> getMyNotifications(@CurrentUsername String username) {
         List<Notification> notifications = notificationService.getUserNotifications(username);
         return ResponseEntity.ok(ApiResponse.success(notifications));
     }

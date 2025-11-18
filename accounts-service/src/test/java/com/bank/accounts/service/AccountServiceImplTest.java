@@ -1,6 +1,6 @@
 package com.bank.accounts.service;
 
-import com.bank.accounts.client.NotificationClient;
+import com.bank.accounts.kafka.NotificationProducer;
 import com.bank.accounts.entity.Account;
 import com.bank.accounts.entity.BankAccount;
 import com.bank.accounts.mapper.AccountMapper;
@@ -40,7 +40,7 @@ class AccountServiceTest {
     private BankAccountRepository bankAccountRepository;
 
     @Mock
-    private NotificationClient notificationClient;
+    private NotificationProducer notificationProducer;
 
     @Spy
     private final AccountMapper accountMapper = AccountMapper.INSTANCE;
@@ -75,14 +75,14 @@ class AccountServiceTest {
     void testCreateAccount_Success() {
         when(accountRepository.existsByUsername(anyString())).thenReturn(false);
         when(accountRepository.save(any(Account.class))).thenReturn(mockAccount);
-        doNothing().when(notificationClient).sendNotification(any(NotificationRequest.class));
+        doNothing().when(notificationProducer).sendNotification(any(NotificationRequest.class));
 
         AccountDTO result = accountService.createAccount(validRequest);
 
         assertNotNull(result);
         assertEquals("testuser", result.getUsername());
         verify(accountRepository).save(any(Account.class));
-        verify(notificationClient).sendNotification(any(NotificationRequest.class));
+        verify(notificationProducer).sendNotification(any(NotificationRequest.class));
     }
 
     @Test

@@ -32,7 +32,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://bank-app-auth-server:9100
+          issuer-uri: ${SECURITY_ISSUER:http://bank-app-auth-server:9100}
       client:
         registration:
           exchange-service:
@@ -42,23 +42,7 @@ spring:
             scope: exchange.read
         provider:
           exchange-service:
-            token-uri: http://bank-app-auth-server:9100/oauth2/token
-
-  cloud:
-    openfeign:
-      client:
-        config:
-          default:
-            connectTimeout: 5000
-            readTimeout: 10000
-      circuitbreaker:
-        enabled: true
-
-eureka:
-  client:
-    enabled: false
-    service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+            token-uri: ${TOKEN_URI:http://bank-app-auth-server:9100/oauth2/token}
 
 security:
   internal-client:

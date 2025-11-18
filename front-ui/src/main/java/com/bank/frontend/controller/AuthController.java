@@ -2,9 +2,9 @@ package com.bank.frontend.controller;
 
 import com.bank.common.dto.contracts.accounts.ChangePasswordRequest;
 import com.bank.common.dto.contracts.accounts.CreateAccountRequest;
-import com.bank.common.dto.contracts.auth.LoginRequest;
-import com.bank.common.dto.contracts.auth.RegisterRequest;
-import com.bank.common.dto.contracts.auth.TokenResponse;
+import com.bank.common.auth.LoginRequest;
+import com.bank.common.auth.RegisterRequest;
+import com.bank.common.auth.TokenResponse;
 import com.bank.common.util.ErrorMessageUtil;
 import com.bank.frontend.client.AccountsClient;
 import com.bank.frontend.service.AuthService;

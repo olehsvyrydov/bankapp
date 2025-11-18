@@ -88,6 +88,10 @@
             <groupId>com.bank</groupId>
             <artifactId>common-lib</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.bank</groupId>
+            <artifactId>common-security</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

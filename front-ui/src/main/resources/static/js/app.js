@@ -177,7 +177,7 @@ function calculateAge(birthDate) {
 }
 
 function refreshExchangeRates() {
-    fetch('/api/exchange-rates')
+    fetch('/api/exchange/rates')
         .then(response => response.json())
         .then(data => {
             const tbody = document.querySelector('.exchange-rates table tbody');

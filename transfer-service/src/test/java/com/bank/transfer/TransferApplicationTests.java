@@ -3,7 +3,7 @@ package com.bank.transfer;
 import com.bank.transfer.client.AccountsClient;
 import com.bank.transfer.client.BlockerClient;
 import com.bank.transfer.client.ExchangeClient;
-import com.bank.transfer.client.NotificationClient;
+import com.bank.transfer.kafka.NotificationProducer;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -21,7 +21,7 @@ class TransferApplicationTests {
   private ExchangeClient exchangeClient;
 
   @MockBean
-  private NotificationClient notificationClient;
+  private NotificationProducer notificationProducer;
 
   @Test
   void contextLoads() {}

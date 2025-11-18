@@ -2,7 +2,7 @@ package com.bank.cash.service;
 
 import com.bank.cash.client.AccountsClient;
 import com.bank.cash.client.BlockerClient;
-import com.bank.cash.client.NotificationClient;
+import com.bank.cash.kafka.NotificationProducer;
 import com.bank.common.dto.contracts.accounts.BankAccountDTO;
 import com.bank.common.dto.contracts.accounts.BankOperation;
 import com.bank.common.dto.contracts.accounts.UpdateBalanceRequest;
@@ -34,19 +34,19 @@ public class CashServiceImpl implements CashService
     private final TransactionRepository transactionRepository;
     private final AccountsClient accountsClient;
     private final BlockerClient blockerClient;
-    private final NotificationClient notificationClient;
+    private final NotificationProducer notificationProducer;
     private final ObjectMapper objectMapper;
 
     public CashServiceImpl(TransactionRepository transactionRepository,
         AccountsClient accountsClient,
         BlockerClient blockerClient,
-        NotificationClient notificationClient,
+        NotificationProducer notificationProducer,
         ObjectMapper objectMapper)
     {
         this.transactionRepository = transactionRepository;
         this.accountsClient = accountsClient;
         this.blockerClient = blockerClient;
-        this.notificationClient = notificationClient;
+        this.notificationProducer = notificationProducer;
         this.objectMapper = objectMapper;
     }
 
@@ -81,7 +81,7 @@ public class CashServiceImpl implements CashService
                     .build();
                 transactionRepository.save(transaction);
 
-                notificationClient.sendNotification(NotificationRequest.builder()
+                notificationProducer.sendNotification(NotificationRequest.builder()
                     .username(username)
                     .message("Suspicious operation blocked: " + request.getType() + " " + request.getAmount())
                     .type("WARNING")
@@ -119,8 +119,8 @@ public class CashServiceImpl implements CashService
                 .build();
             transaction = transactionRepository.save(transaction);
 
-            // Send notification
-            notificationClient.sendNotification(NotificationRequest.builder()
+            // Send notification via Kafka
+            notificationProducer.sendNotification(NotificationRequest.builder()
                 .username(username)
                 .message(request.getType() + " of " + request.getAmount() + " " + currency + " completed")
                 .type("INFO")
