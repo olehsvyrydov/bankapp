@@ -23,11 +23,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * RED Phase: These tests are expected to fail initially until tracing
  * dependencies and configuration are added.
  */
-@SpringBootTest
+@SpringBootTest(classes = TracingTestConfiguration.class)
 @AutoConfigureObservability
 @TestPropertySource(properties = {
     "management.tracing.enabled=true",
-    "management.tracing.sampling.probability=1.0"
+    "management.tracing.sampling.probability=1.0",
+    "spring.kafka.bootstrap-servers=localhost:9092"
 })
 class TracingIntegrationTest {
 
