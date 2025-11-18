@@ -156,6 +156,8 @@ customKafka:
       partitions: 3
     - name: bank.exchange.rates
       partitions: 3
+    - name: bank.logs
+      partitions: 5
 
 # Auth Server subchart configuration
 auth-server:
