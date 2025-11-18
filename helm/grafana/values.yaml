@@ -1,0 +1,134 @@
+# Default values for bank-app-grafana
+# This is a wrapper chart for the official Grafana Helm chart
+
+grafana:
+  # Admin credentials
+  adminUser: admin
+  adminPassword: admin
+  # For production, use a secret:
+  # admin:
+  #   existingSecret: grafana-admin-credentials
+  #   userKey: admin-user
+  #   passwordKey: admin-password
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 3000
+
+  # Resource limits
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  # Persistence (disabled for dev, enable for prod)
+  persistence:
+    enabled: false
+    # Uncomment for production
+    # enabled: true
+    # size: 10Gi
+    # storageClassName: standard
+
+  # Datasources configuration
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          access: proxy
+          url: http://bank-app-prometheus-prometheus-server:9090
+          isDefault: true
+          jsonData:
+            timeInterval: 15s
+            queryTimeout: 60s
+          editable: true
+
+  # Dashboard providers
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: 'bank-app-dashboards'
+          orgId: 1
+          folder: 'Bank Application'
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/bank-app
+
+  # Dashboard ConfigMaps
+  dashboardsConfigMaps:
+    bank-app: "bank-app-grafana-dashboards"
+
+  # Grafana configuration
+  grafana.ini:
+    analytics:
+      check_for_updates: false
+      reporting_enabled: false
+    log:
+      mode: console
+      level: info
+    paths:
+      data: /var/lib/grafana/
+      logs: /var/log/grafana
+      plugins: /var/lib/grafana/plugins
+      provisioning: /etc/grafana/provisioning
+    server:
+      domain: localhost
+      root_url: "%(protocol)s://%(domain)s:%(http_port)s/"
+      serve_from_sub_path: false
+
+  # Plugins to install
+  plugins:
+    - grafana-piechart-panel
+    - grafana-clock-panel
+
+  # Enable anonymous access for demo purposes (disable in production)
+  # grafana.ini:
+  #   auth.anonymous:
+  #     enabled: true
+  #     org_role: Viewer
+
+  # SMTP configuration for alerting (optional)
+  # smtp:
+  #   enabled: false
+  #   host: smtp.gmail.com:587
+  #   user: your-email@gmail.com
+  #   password: your-app-password
+  #   from_address: grafana@bankapp.com
+  #   from_name: Bank App Grafana
+
+  # Sidecar for automatic dashboard discovery
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      folder: /tmp/dashboards
+      folderAnnotation: grafana_folder
+      provider:
+        foldersFromFilesStructure: true
+    datasources:
+      enabled: false  # We're using static datasource config above
+
+  # Probes
+  livenessProbe:
+    httpGet:
+      path: /api/health
+      port: 3000
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+
+  readinessProbe:
+    httpGet:
+      path: /api/health
+      port: 3000
+    initialDelaySeconds: 30
+    periodSeconds: 5
+    timeoutSeconds: 3
