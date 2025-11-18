@@ -1,0 +1,116 @@
+# Default values for bank-app-elasticsearch
+# This is a wrapper chart for the official Elasticsearch Helm chart
+
+elasticsearch:
+  # Cluster configuration
+  clusterName: "bank-app-elasticsearch"
+
+  # Single node for dev environment
+  # For production, use 3+ nodes
+  replicas: 1
+  minimumMasterNodes: 1
+
+  # Resources
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+
+  # JVM heap size (should be ~50% of memory limit)
+  esJavaOpts: "-Xmx512m -Xms512m"
+
+  # Volume for data persistence
+  # Using emptyDir for dev, PVC for production
+  persistence:
+    enabled: false
+    # Uncomment for production
+    # enabled: true
+    # size: 30Gi
+    # storageClass: standard
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 9200
+
+  # Security - disabled for dev, enable for production
+  # For Elasticsearch 8.x, security is enabled by default
+  # We disable it for dev simplicity
+  secret:
+    enabled: false
+
+  # Elasticsearch configuration
+  esConfig:
+    elasticsearch.yml: |
+      # Disable security for dev environment
+      xpack.security.enabled: false
+      xpack.security.enrollment.enabled: false
+      xpack.security.http.ssl:
+        enabled: false
+      xpack.security.transport.ssl:
+        enabled: false
+      # Index lifecycle management
+      indices.lifecycle.poll_interval: "1m"
+      # For production, uncomment:
+      # xpack.security.enabled: true
+      # xpack.security.transport.ssl.enabled: true
+      # xpack.security.http.ssl.enabled: true
+
+  # Probes
+  readinessProbe:
+    failureThreshold: 3
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    successThreshold: 3
+    timeoutSeconds: 5
+
+  # Anti-affinity for production (disabled for dev)
+  antiAffinity: "soft"
+  # For production use "hard"
+
+  # Index templates for log retention (7 days)
+  # This will be configured via Logstash output or Elasticsearch API
+  extraInitContainers: |
+    - name: create-ilm-policy
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.5.1
+      command:
+        - sh
+        - -c
+        - |
+          until curl -s http://localhost:9200/_cluster/health | grep -q '"status":"green"\|"status":"yellow"'; do
+            echo "Waiting for Elasticsearch to be ready..."
+            sleep 5
+          done
+
+          # Create ILM policy for 7 days retention
+          curl -X PUT "http://localhost:9200/_ilm/policy/bank-logs-policy" -H 'Content-Type: application/json' -d'
+          {
+            "policy": {
+              "phases": {
+                "hot": {
+                  "actions": {
+                    "rollover": {
+                      "max_size": "50gb",
+                      "max_age": "1d"
+                    }
+                  }
+                },
+                "delete": {
+                  "min_age": "7d",
+                  "actions": {
+                    "delete": {}
+                  }
+                }
+              }
+            }
+          }
+          '
+
+          echo "ILM policy created"
+
+  # System calls filter - may need to be disabled on some systems
+  sysctlInitContainer:
+    enabled: true
