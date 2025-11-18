@@ -158,12 +158,6 @@
                 <version>${zipkin-reporter.version}</version>
             </dependency>
 
-            <!-- Micrometer Prometheus Registry -->
-            <dependency>
-                <groupId>io.micrometer</groupId>
-                <artifactId>micrometer-registry-prometheus</artifactId>
-            </dependency>
-
             <!-- Flyway -->
             <dependency>
                 <groupId>org.flywaydb</groupId>
