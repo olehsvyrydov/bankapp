@@ -1,8 +1,10 @@
 package com.bank.common.config;
 
+import io.micrometer.observation.ObservationRegistry;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -18,6 +20,9 @@ import java.util.Map;
 public class KafkaProducerConfig {
 
     private final KafkaProperties kafkaProperties;
+
+    @Autowired(required = false)
+    private ObservationRegistry observationRegistry;
 
     @Bean
     public ProducerFactory<String, Object> producerFactory() {
@@ -40,6 +45,14 @@ public class KafkaProducerConfig {
 
     @Bean
     public KafkaTemplate<String, Object> kafkaTemplate() {
-        return new KafkaTemplate<>(producerFactory());
+        KafkaTemplate<String, Object> template = new KafkaTemplate<>(producerFactory());
+
+        // Enable observation for distributed tracing
+        // This allows Kafka producer operations to be traced with Zipkin
+        if (observationRegistry != null) {
+            template.setObservationEnabled(true);
+        }
+
+        return template;
     }
 }

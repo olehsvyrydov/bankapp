@@ -1,8 +1,10 @@
 package com.bank.common.config;
 
+import io.micrometer.observation.ObservationRegistry;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
@@ -21,6 +23,9 @@ import java.util.Map;
 public class KafkaConsumerConfig {
 
     private final KafkaProperties kafkaProperties;
+
+    @Autowired(required = false)
+    private ObservationRegistry observationRegistry;
 
     @Bean
     public ConsumerFactory<String, Object> consumerFactory() {
@@ -47,6 +52,13 @@ public class KafkaConsumerConfig {
             new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+
+        // Enable observation for distributed tracing
+        // This allows Kafka consumer operations to be traced with Zipkin
+        if (observationRegistry != null) {
+            factory.getContainerProperties().setObservationEnabled(true);
+        }
+
         return factory;
     }
 }
