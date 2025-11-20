@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <springProperty scope="context" name="springAppName" source="spring.application.name"/>
+    <springProperty scope="context" name="kafkaBootstrapServers" source="spring.kafka.bootstrap-servers" defaultValue="localhost:9092"/>
+
+    <!-- Console appender for local development -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId:-},%X{spanId:-}] %-5level %logger{36} - %msg%n</pattern>
+            <charset>utf8</charset>
+        </encoder>
+    </appender>
+
+    <!-- Kafka appender for sending logs to ELK -->
+    <appender name="KAFKA" class="com.github.danielwegener.logback.kafka.KafkaAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeContext>true</includeContext>
+            <includeMdc>true</includeMdc>
+            <includeStructuredArguments>true</includeStructuredArguments>
+            <includeNonStructuredArguments>false</includeNonStructuredArguments>
+            <includeTags>true</includeTags>
+            <includeCallerData>false</includeCallerData>
+
+            <!-- Add custom fields -->
+            <customFields>{"application":"${springAppName:-unknown}"}</customFields>
+
+            <!-- Field names -->
+            <fieldNames>
+                <timestamp>timestamp</timestamp>
+                <version>[ignore]</version>
+                <message>message</message>
+                <logger>logger</logger>
+                <thread>thread</thread>
+                <level>level</level>
+                <levelValue>[ignore]</levelValue>
+            </fieldNames>
+
+            <!-- Mask sensitive data using provider -->
+            <provider class="net.logstash.logback.composite.loggingevent.LoggingEventPatternJsonProvider">
+                <pattern>
+                    {
+                        "traceId": "%X{traceId:-}",
+                        "spanId": "%X{spanId:-}"
+                    }
+                </pattern>
+            </provider>
+        </encoder>
+
+        <!-- Kafka configuration -->
+        <topic>bank.logs</topic>
+        <keyingStrategy class="com.github.danielwegener.logback.kafka.keying.RoundRobinKeyingStrategy"/>
+        <deliveryStrategy class="com.github.danielwegener.logback.kafka.delivery.AsynchronousDeliveryStrategy"/>
+        <producerConfig>bootstrap.servers=${kafkaBootstrapServers}</producerConfig>
+        <producerConfig>acks=0</producerConfig>
+        <producerConfig>linger.ms=100</producerConfig>
+        <producerConfig>max.block.ms=0</producerConfig>
+        <producerConfig>compression.type=gzip</producerConfig>
+
+        <!-- Fallback to console if Kafka is unavailable -->
+        <appender-ref ref="CONSOLE"/>
+    </appender>
+
+    <!-- Async appender to avoid blocking -->
+    <appender name="ASYNC_KAFKA" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="KAFKA"/>
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <!-- Root logger -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_KAFKA"/>
+    </root>
+
+    <!-- Specific loggers -->
+    <logger name="com.bank" level="DEBUG"/>
+    <logger name="org.springframework.web" level="INFO"/>
+    <logger name="org.springframework.kafka" level="INFO"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="org.hibernate.SQL" level="DEBUG"/>
+    <logger name="com.github.danielwegener.logback.kafka" level="WARN"/>
+
+    <!-- Reduce noise from Kafka appender -->
+    <logger name="org.apache.kafka" level="WARN"/>
+</configuration>
