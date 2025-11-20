@@ -23,8 +23,8 @@ spec:
             severity: critical
             component: http
           annotations:
-            summary: "High 5xx error rate on {{ $labels.application }}"
-            description: "Application {{ $labels.application }} has {{ $value | humanizePercentage }} error rate (threshold: 5%)"
+            summary: "High 5xx error rate on {{`{{ $labels.application }}`}}"
+            description: "Application {{`{{ $labels.application }}`}} has {{`{{ $value | humanizePercentage }}`}} error rate (threshold: 5%)"
 
     - name: bank-app-latency
       interval: 30s
@@ -39,8 +39,8 @@ spec:
             severity: warning
             component: http
           annotations:
-            summary: "High response time on {{ $labels.application }}"
-            description: "Application {{ $labels.application }} has p95 latency of {{ $value }}s (threshold: 1s)"
+            summary: "High response time on {{`{{ $labels.application }}`}}"
+            description: "Application {{`{{ $labels.application }}`}} has p95 latency of {{`{{ $value }}`}}s (threshold: 1s)"
 
     - name: bank-app-authentication
       interval: 30s
@@ -54,7 +54,7 @@ spec:
             component: auth
           annotations:
             summary: "High rate of failed login attempts"
-            description: "{{ $labels.application }} has {{ $value }} failed login attempts per minute (threshold: 10/min)"
+            description: "{{`{{ $labels.application }}`}} has {{`{{ $value }}`}} failed login attempts per minute (threshold: 10/min)"
 
     - name: bank-app-transfers
       interval: 30s
@@ -68,7 +68,7 @@ spec:
             component: transfer
           annotations:
             summary: "High rate of failed transfers"
-            description: "{{ $labels.application }} has {{ $value }} failed transfers per minute due to {{ $labels.reason }} (threshold: 5/min)"
+            description: "{{`{{ $labels.application }}`}} has {{`{{ $value }}`}} failed transfers per minute due to {{`{{ $labels.reason }}`}} (threshold: 5/min)"
 
     - name: bank-app-exchange-rates
       interval: 60s
@@ -82,7 +82,7 @@ spec:
             component: exchange
           annotations:
             summary: "Exchange rates not updated"
-            description: "Exchange rates have not been updated for {{ $value | humanizeDuration }}"
+            description: "Exchange rates have not been updated for {{`{{ $value | humanizeDuration }}`}}"
 
         - alert: ExchangeRateUpdateFailure
           expr: |
@@ -93,7 +93,7 @@ spec:
             component: exchange
           annotations:
             summary: "Exchange rate update failures"
-            description: "{{ $labels.application }} is experiencing exchange rate update failures"
+            description: "{{`{{ $labels.application }}`}} is experiencing exchange rate update failures"
 
     - name: bank-app-notifications
       interval: 30s
@@ -107,7 +107,7 @@ spec:
             component: notifications
           annotations:
             summary: "High rate of notification failures"
-            description: "{{ $labels.application }} has {{ $value }} notification failures per minute (threshold: 3/min)"
+            description: "{{`{{ $labels.application }}`}} has {{`{{ $value }}`}} notification failures per minute (threshold: 3/min)"
 
     - name: bank-app-security
       interval: 30s
@@ -121,7 +121,7 @@ spec:
             component: security
           annotations:
             summary: "High rate of blocked operations"
-            description: "{{ $labels.application }} has {{ $value }} blocked operations per minute"
+            description: "{{`{{ $labels.application }}`}} has {{`{{ $value }}`}} blocked operations per minute"
 
     - name: bank-app-jvm
       interval: 30s
@@ -134,8 +134,8 @@ spec:
             severity: warning
             component: jvm
           annotations:
-            summary: "High heap memory usage on {{ $labels.application }}"
-            description: "Application {{ $labels.application }} is using {{ $value | humanizePercentage }} of heap memory"
+            summary: "High heap memory usage on {{`{{ $labels.application }}`}}"
+            description: "Application {{`{{ $labels.application }}`}} is using {{`{{ $value | humanizePercentage }}`}} of heap memory"
 
         - alert: HighGCTime
           expr: |
@@ -145,6 +145,6 @@ spec:
             severity: warning
             component: jvm
           annotations:
-            summary: "High GC time on {{ $labels.application }}"
-            description: "Application {{ $labels.application }} is spending {{ $value | humanizePercentage }} time in GC"
+            summary: "High GC time on {{`{{ $labels.application }}`}}"
+            description: "Application {{`{{ $labels.application }}`}} is spending {{`{{ $value | humanizePercentage }}`}} time in GC"
 {{- end }}
