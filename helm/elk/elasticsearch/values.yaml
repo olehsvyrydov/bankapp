@@ -71,45 +71,8 @@ elasticsearch:
   antiAffinity: "soft"
   # For production use "hard"
 
-  # Index templates for log retention (7 days)
-  # This will be configured via Logstash output or Elasticsearch API
-  extraInitContainers: |
-    - name: create-ilm-policy
-      image: docker.elastic.co/elasticsearch/elasticsearch:8.5.1
-      command:
-        - sh
-        - -c
-        - |
-          until curl -s http://localhost:9200/_cluster/health | grep -q '"status":"green"\|"status":"yellow"'; do
-            echo "Waiting for Elasticsearch to be ready..."
-            sleep 5
-          done
-
-          # Create ILM policy for 7 days retention
-          curl -X PUT "http://localhost:9200/_ilm/policy/bank-logs-policy" -H 'Content-Type: application/json' -d'
-          {
-            "policy": {
-              "phases": {
-                "hot": {
-                  "actions": {
-                    "rollover": {
-                      "max_size": "50gb",
-                      "max_age": "1d"
-                    }
-                  }
-                },
-                "delete": {
-                  "min_age": "7d",
-                  "actions": {
-                    "delete": {}
-                  }
-                }
-              }
-            }
-          }
-          '
-
-          echo "ILM policy created"
+  # Note: ILM policy will be created via Logstash or manually after ES starts
+  # Removing init container to avoid circular dependency
 
   # System calls filter - may need to be disabled on some systems
   sysctlInitContainer:
