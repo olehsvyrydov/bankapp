@@ -44,7 +44,7 @@ prometheus:
   # ServiceMonitor for auto-discovery of microservices
   # Note: Requires Prometheus Operator CRDs
   serviceMonitor:
-    enabled: true
+    enabled: false  # Disabled for Minikube, use extraScrapeConfigs instead
     # Additional labels for ServiceMonitor selector
     additionalLabels:
       app: bank-app
