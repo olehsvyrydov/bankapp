@@ -54,6 +54,10 @@ elasticsearch:
         enabled: false
       # Index lifecycle management
       indices.lifecycle.poll_interval: "1m"
+      # Disable disk watermarks for dev environment
+      cluster.routing.allocation.disk.threshold_enabled: false
+      # Disable GeoIP downloader (not needed for dev)
+      ingest.geoip.downloader.enabled: false
       # For production, uncomment:
       # xpack.security.enabled: true
       # xpack.security.transport.ssl.enabled: true
@@ -73,6 +77,12 @@ elasticsearch:
 
   # Note: ILM policy will be created via Logstash or manually after ES starts
   # Removing init container to avoid circular dependency
+
+  # Environment variables
+  # ES 8.x requires ELASTIC_PASSWORD even when security is disabled
+  extraEnvs:
+    - name: ELASTIC_PASSWORD
+      value: "changeme"
 
   # System calls filter - may need to be disabled on some systems
   sysctlInitContainer:

@@ -20,7 +20,7 @@ kibana:
     port: 5601
 
   # Elasticsearch connection
-  elasticsearchHosts: "http://bank-app-elasticsearch-elasticsearch:9200"
+  elasticsearchHosts: "http://bank-app-elasticsearch-master:9200"
 
   # Kibana configuration
   kibanaConfig:
@@ -31,7 +31,7 @@ kibana:
       server.port: 5601
 
       # Elasticsearch configuration
-      elasticsearch.hosts: ["${ELASTICSEARCH_HOSTS:http://bank-app-elasticsearch-elasticsearch:9200}"]
+      elasticsearch.hosts: ["${ELASTICSEARCH_HOSTS:http://bank-app-elasticsearch-master:9200}"]
 
       # Disable security for dev (enable for production)
       # For Elasticsearch 8.x without security
@@ -55,7 +55,7 @@ kibana:
   # Environment variables
   extraEnvs:
     - name: ELASTICSEARCH_HOSTS
-      value: "http://bank-app-elasticsearch-elasticsearch:9200"
+      value: "http://bank-app-elasticsearch-master:9200"
     # For production with authentication:
     # - name: ELASTICSEARCH_USERNAME
     #   valueFrom:
@@ -76,7 +76,7 @@ kibana:
         - sh
         - -c
         - |
-          until curl -s http://bank-app-elasticsearch-elasticsearch:9200/_cluster/health | grep -q '"status":"green"\|"status":"yellow"'; do
+          until curl -s http://bank-app-elasticsearch-master:9200/_cluster/health | grep -q '"status":"green"\|"status":"yellow"'; do
             echo "Waiting for Elasticsearch to be ready..."
             sleep 5
           done
