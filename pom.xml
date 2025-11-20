@@ -158,6 +158,20 @@
                 <version>${zipkin-reporter.version}</version>
             </dependency>
 
+            <!-- Logstash Logback Encoder for structured logging -->
+            <dependency>
+                <groupId>net.logstash.logback</groupId>
+                <artifactId>logstash-logback-encoder</artifactId>
+                <version>8.0</version>
+            </dependency>
+
+            <!-- Logback Kafka Appender -->
+            <dependency>
+                <groupId>com.github.danielwegener</groupId>
+                <artifactId>logback-kafka-appender</artifactId>
+                <version>0.2.0-RC2</version>
+            </dependency>
+
             <!-- Flyway -->
             <dependency>
                 <groupId>org.flywaydb</groupId>
