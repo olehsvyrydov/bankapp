@@ -159,6 +159,109 @@ load_images() {
     print_info "All images loaded into minikube successfully"
 }
 
+# Deploy ELK Stack
+deploy_elk_stack() {
+    print_step "Deploying ELK Stack..."
+
+    # Update Helm dependencies for all ELK charts
+    print_info "Updating Helm dependencies for ELK charts..."
+    for chart in elasticsearch logstash kibana; do
+        helm dependency update "./helm/elk/${chart}" || {
+            print_error "Failed to update Helm dependencies for ${chart}"
+            exit 1
+        }
+    done
+
+    # Deploy Elasticsearch first
+    print_info "Deploying Elasticsearch..."
+    helm upgrade --install bank-app-elasticsearch ./helm/elk/elasticsearch \
+        --namespace ${NAMESPACE} \
+        --wait \
+        --timeout 10m || {
+        print_error "Failed to deploy Elasticsearch"
+        exit 1
+    }
+    print_info "✓ Elasticsearch deployed successfully"
+
+    # Deploy Logstash
+    print_info "Deploying Logstash..."
+    helm upgrade --install bank-app-logstash ./helm/elk/logstash \
+        --namespace ${NAMESPACE} \
+        --wait \
+        --timeout 10m || {
+        print_error "Failed to deploy Logstash"
+        exit 1
+    }
+    print_info "✓ Logstash deployed successfully"
+
+    # Create dummy ES token secret for Kibana (required for Kibana 8.5.1 without hooks)
+    print_info "Creating dummy Elasticsearch token secret for Kibana..."
+    kubectl create secret generic bank-app-kibana-kibana-es-token \
+        -n ${NAMESPACE} \
+        --from-literal=token=dummy \
+        --dry-run=client -o yaml | kubectl apply -f - || {
+        print_warning "Secret may already exist, continuing..."
+    }
+
+    # Deploy Kibana with --no-hooks flag
+    print_info "Deploying Kibana..."
+    helm upgrade --install bank-app-kibana ./helm/elk/kibana \
+        --namespace ${NAMESPACE} \
+        --no-hooks \
+        --wait \
+        --timeout 10m || {
+        print_error "Failed to deploy Kibana"
+        exit 1
+    }
+    print_info "✓ Kibana deployed successfully"
+
+    print_info "✓ ELK Stack deployed successfully"
+}
+
+# Test ELK deployment
+test_elk_deployment() {
+    print_step "Running ELK Stack Helm tests..."
+
+    local all_passed=true
+
+    # Test Elasticsearch
+    print_info "Testing Elasticsearch..."
+    if helm test bank-app-elasticsearch -n ${NAMESPACE} --logs; then
+        print_info "✓ Elasticsearch tests passed"
+    else
+        print_error "✗ Elasticsearch tests failed"
+        all_passed=false
+    fi
+
+    # Test Logstash
+    print_info "Testing Logstash..."
+    if helm test bank-app-logstash -n ${NAMESPACE} --logs; then
+        print_info "✓ Logstash tests passed"
+    else
+        print_error "✗ Logstash tests failed"
+        all_passed=false
+    fi
+
+    # Test Kibana
+    print_info "Testing Kibana..."
+    if helm test bank-app-kibana -n ${NAMESPACE} --logs; then
+        print_info "✓ Kibana tests passed"
+    else
+        print_error "✗ Kibana tests failed"
+        all_passed=false
+    fi
+
+    if [ "$all_passed" = true ]; then
+        echo ""
+        print_info "✓ All ELK tests passed successfully!"
+        return 0
+    else
+        echo ""
+        print_error "✗ Some ELK tests failed!"
+        return 1
+    fi
+}
+
 # Test deployment using Helm tests
 test_deployment() {
     print_step "Running Helm tests..."
@@ -200,6 +303,9 @@ deploy_app() {
     # Create namespace if it doesn't exist
     kubectl create namespace ${NAMESPACE} 2>/dev/null || print_info "Namespace ${NAMESPACE} already exists"
 
+    # Deploy ELK Stack first (before main app)
+    deploy_elk_stack
+
     # Check if release exists
     if helm list -n ${NAMESPACE} | grep -q ${HELM_RELEASE}; then
         print_info "Upgrading existing Helm release..."
@@ -231,7 +337,7 @@ deploy_app() {
 
     echo ""
     print_info "Running Helm tests to verify deployment..."
-    if test_deployment; then
+    if test_deployment && test_elk_deployment; then
         echo ""
         print_info "Deployment verification completed successfully!"
     else
@@ -248,6 +354,7 @@ deploy_app() {
     print_info "To access the application, run:"
     echo "  kubectl port-forward -n ${NAMESPACE} svc/${HELM_RELEASE}-front-ui 8090:8090"
     echo "  kubectl port-forward -n ${NAMESPACE} svc/${HELM_RELEASE}-gateway-service 8100:8100"
+    echo "  kubectl port-forward -n ${NAMESPACE} svc/bank-app-kibana-kibana 5601:5601"
 
     local minikube_ip
     if minikube_ip=$(minikube ip 2>/dev/null); then
@@ -267,6 +374,7 @@ deploy_app() {
 clean() {
     print_step "Cleaning up deployment..."
 
+    # Uninstall main app
     if helm list -n ${NAMESPACE} | grep -q ${HELM_RELEASE}; then
         print_info "Uninstalling Helm release..."
         helm uninstall ${HELM_RELEASE} -n ${NAMESPACE}
@@ -274,6 +382,12 @@ clean() {
     else
         print_warning "Helm release ${HELM_RELEASE} not found"
     fi
+
+    # Uninstall ELK Stack
+    print_info "Uninstalling ELK Stack..."
+    helm uninstall bank-app-kibana -n ${NAMESPACE} 2>/dev/null || print_warning "Kibana release not found"
+    helm uninstall bank-app-logstash -n ${NAMESPACE} 2>/dev/null || print_warning "Logstash release not found"
+    helm uninstall bank-app-elasticsearch -n ${NAMESPACE} 2>/dev/null || print_warning "Elasticsearch release not found"
 
     print_info "Deleting namespace ${NAMESPACE}..."
     kubectl delete namespace ${NAMESPACE} --ignore-not-found=true
@@ -303,10 +417,12 @@ usage() {
     echo "  all           - Run complete setup (start + load + deploy)"
     echo "  start         - Start minikube cluster"
     echo "  load          - Build images directly in minikube's Docker daemon"
-    echo "  deploy        - Deploy application using Helm (includes tests)"
+    echo "  deploy        - Deploy application using Helm (includes ELK + tests)"
+    echo "  deploy-elk    - Deploy only ELK Stack"
     echo "  test          - Run Helm tests on deployed application"
+    echo "  test-elk      - Run Helm tests on ELK Stack"
     echo "  redeploy      - Clean and deploy again"
-    echo "  clean         - Remove deployment and namespace"
+    echo "  clean         - Remove deployment and namespace (includes ELK)"
     echo "  stop          - Stop minikube cluster"
     echo "  delete        - Delete minikube cluster completely"
     echo "  status        - Show cluster and deployment status"
@@ -316,8 +432,8 @@ usage() {
     echo ""
     echo "Examples:"
     echo "  $0 all                    # Complete setup"
-    echo "  $0 deploy                 # Deploy and run tests"
-    echo "  $0 test                   # Run tests only"
+    echo "  $0 deploy                 # Deploy app + ELK and run tests"
+    echo "  $0 test-elk               # Test ELK stack only"
     echo "  IMAGE_TAG=1.0.0 $0 load   # Load images with specific tag"
 }
 
@@ -374,8 +490,14 @@ main() {
         deploy)
             deploy_app
             ;;
+        deploy-elk)
+            deploy_elk_stack
+            ;;
         test)
             test_deployment
+            ;;
+        test-elk)
+            test_elk_deployment
             ;;
         redeploy)
             clean

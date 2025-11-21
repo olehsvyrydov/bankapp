@@ -37,6 +37,10 @@ data:
   LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: "DEBUG"
   LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_CLOUD_GATEWAY: "DEBUG"
   LOGGING_LEVEL_COM_BANK_GATEWAY: "DEBUG"
+
+  # Kafka configuration for logging
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "{{ .Values.global.kafka.bootstrapServers }}"
+
   CLIENTS_GATEWAY_SERVICE_ID: {{ (.Values.global.services.gateway.name | default "bank-app-gateway-service.bank-app-dev") | quote }}
   CLIENTS_AUTH_SERVICE_ID: {{ (.Values.global.services.auth.name | default "bank-app-auth-server.bank-app-dev") | quote }}
 

@@ -45,13 +45,14 @@ elasticsearch:
   # Elasticsearch configuration
   esConfig:
     elasticsearch.yml: |
+      # Network configuration
+      network.host: 0.0.0.0
       # Disable security for dev environment
       xpack.security.enabled: false
       xpack.security.enrollment.enabled: false
-      xpack.security.http.ssl:
-        enabled: false
-      xpack.security.transport.ssl:
-        enabled: false
+      # Explicitly disable HTTP SSL
+      xpack.security.http.ssl.enabled: false
+      xpack.security.transport.ssl.enabled: false
       # Index lifecycle management
       indices.lifecycle.poll_interval: "1m"
       # Disable disk watermarks for dev environment
@@ -64,12 +65,22 @@ elasticsearch:
       # xpack.security.http.ssl.enabled: true
 
   # Probes
+  # Custom readiness probe for HTTP (security disabled)
   readinessProbe:
+    exec:
+      command:
+        - sh
+        - -c
+        - |
+          #!/usr/bin/env bash
+          set -e
+          # Use HTTP instead of HTTPS since security is disabled
+          curl -f http://localhost:9200/_cluster/health
     failureThreshold: 3
     initialDelaySeconds: 10
     periodSeconds: 10
-    successThreshold: 3
-    timeoutSeconds: 5
+    successThreshold: 1
+    timeoutSeconds: 10
 
   # Anti-affinity for production (disabled for dev)
   antiAffinity: "soft"
@@ -80,9 +91,18 @@ elasticsearch:
 
   # Environment variables
   # ES 8.x requires ELASTIC_PASSWORD even when security is disabled
+  # Also disable security autoconfiguration
   extraEnvs:
     - name: ELASTIC_PASSWORD
       value: "changeme"
+    - name: xpack.security.enabled
+      value: "false"
+    - name: xpack.security.enrollment.enabled
+      value: "false"
+    - name: xpack.security.http.ssl.enabled
+      value: "false"
+    - name: xpack.security.transport.ssl.enabled
+      value: "false"
 
   # System calls filter - may need to be disabled on some systems
   sysctlInitContainer:

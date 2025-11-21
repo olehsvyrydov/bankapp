@@ -2,6 +2,15 @@
 # This is a wrapper chart for the official Kibana Helm chart
 
 kibana:
+  # Use HTTP protocol (not HTTPS) for Elasticsearch connection
+  protocol: http
+
+  # Disable service account token creation (not needed when ES security is disabled)
+  createV1ServiceAccountToken: false
+
+  # Disable secret mounts (no certificates needed when security is disabled)
+  secretMounts: []
+
   # Number of replicas
   replicas: 1
 
