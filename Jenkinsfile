@@ -309,6 +309,20 @@ pipeline {
             }
         }
 
+        stage('Deploy Monitoring Stack') {
+            steps {
+                echo "Deploying monitoring and logging infrastructure"
+                script {
+                    build job: 'bank-app-monitoring-deployment',
+                          wait: true,
+                          propagate: false,
+                          parameters: [
+                              string(name: 'NAMESPACE', value: 'bank-app-dev')
+                          ]
+                }
+            }
+        }
+
         stage('Run Integration Tests - Dev') {
             steps {
                 echo "Running integration tests in dev environment"
@@ -438,6 +452,14 @@ pipeline {
                     - front-ui
                     - postgresql
 
+                    Monitoring Stack:
+                    - Zipkin (Distributed Tracing)
+                    - Prometheus (Metrics Collection)
+                    - Grafana (Metrics Visualization)
+                    - Elasticsearch (Log Storage)
+                    - Logstash (Log Processing)
+                    - Kibana (Log Visualization)
+
                     Namespaces:
                     - bank-app-dev
                     - bank-app-test (master branch only)
@@ -447,6 +469,12 @@ pipeline {
                     - Dev: http://bank-app.local (via Ingress)
                     - Test: http://bank-app-test.local (via Ingress)
                     - Prod: http://bank-app-prod.local (via Ingress)
+
+                    Monitoring Access (via port-forward):
+                    - Zipkin: kubectl port-forward -n bank-app-dev svc/bank-app-zipkin 9411:9411
+                    - Prometheus: kubectl port-forward -n bank-app-dev svc/bank-app-prometheus-server 9090:9090
+                    - Grafana: kubectl port-forward -n bank-app-dev svc/bank-app-grafana 3000:3000
+                    - Kibana: kubectl port-forward -n bank-app-dev svc/bank-app-kibana-kibana 5601:5601
                     ========================================
                     """
                 }
