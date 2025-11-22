@@ -2,6 +2,9 @@
 # This is a wrapper chart for the official Grafana Helm chart
 
 grafana:
+  # Disable subchart tests (we have our own test-connection.yaml)
+  testFramework:
+    enabled: false
   # Admin credentials
   adminUser: admin
   adminPassword: admin

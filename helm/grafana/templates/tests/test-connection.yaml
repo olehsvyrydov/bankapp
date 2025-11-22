@@ -15,9 +15,9 @@ spec:
       args:
         - |
           # Test Grafana health endpoint
-          wget --spider --timeout=10 {{ include "bank-app-grafana.fullname" . }}-grafana:3000/api/health &&
+          wget --spider --timeout=10 {{ include "bank-app-grafana.fullname" . }}:3000/api/health &&
           echo "Grafana is healthy" &&
           # Test Grafana API
-          wget -O- --timeout=10 {{ include "bank-app-grafana.fullname" . }}-grafana:3000/api/health | grep -q "ok" &&
+          wget -O- --timeout=10 {{ include "bank-app-grafana.fullname" . }}:3000/api/health | grep -q "ok" &&
           echo "Grafana API is responding"
   restartPolicy: Never

@@ -12,5 +12,5 @@ spec:
     - name: wget
       image: busybox:1.36
       command: ['wget']
-      args: ['--spider', '--timeout=5', '{{ include "bank-app-zipkin.fullname" . }}-zipkin:9411/health']
+      args: ['--spider', '--timeout=5', '{{ include "bank-app-zipkin.fullname" . }}:9411/health']
   restartPolicy: Never

@@ -15,9 +15,9 @@ spec:
       args:
         - |
           # Test Prometheus server health endpoint
-          wget --spider --timeout=5 {{ include "bank-app-prometheus.fullname" . }}-prometheus-server:9090/-/healthy &&
+          wget --spider --timeout=5 {{ include "bank-app-prometheus.fullname" . }}-server:9090/-/healthy &&
           echo "Prometheus server is healthy" &&
           # Test if Prometheus is ready
-          wget --spider --timeout=5 {{ include "bank-app-prometheus.fullname" . }}-prometheus-server:9090/-/ready &&
+          wget --spider --timeout=5 {{ include "bank-app-prometheus.fullname" . }}-server:9090/-/ready &&
           echo "Prometheus server is ready"
   restartPolicy: Never
