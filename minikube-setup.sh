@@ -306,8 +306,8 @@ deploy_app() {
     # Deploy ELK Stack first (before main app)
     deploy_elk_stack
 
-    # Check if release exists
-    if helm list -n ${NAMESPACE} | grep -q ${HELM_RELEASE}; then
+    # Check if release exists and is deployed
+    if helm list -n ${NAMESPACE} --deployed -q | grep -q "^${HELM_RELEASE}$"; then
         print_info "Upgrading existing Helm release..."
         helm upgrade ${HELM_RELEASE} ${HELM_CHART} \
             --namespace ${NAMESPACE} \
@@ -319,6 +319,9 @@ deploy_app() {
             --timeout 10m
     else
         print_info "Installing Helm release..."
+        # Clean up any failed releases first
+        helm uninstall ${HELM_RELEASE} -n ${NAMESPACE} 2>/dev/null || true
+
         helm install ${HELM_RELEASE} ${HELM_CHART} \
             --namespace ${NAMESPACE} \
             --set global.image.registry="" \
