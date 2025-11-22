@@ -6,7 +6,7 @@ metadata:
     {{- include "elasticsearch.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-delete-policy": before-hook-creation
 spec:
   containers:
     - name: test-elasticsearch
@@ -38,7 +38,7 @@ spec:
           fi
 
           # Check cluster health
-          HEALTH=$(curl -s http://{{ .Release.Name }}-master:9200/_cluster/health | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
+          HEALTH=$(curl -s http://{{ .Release.Name }}-master:9200/_cluster/health | grep -Eo '"status"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d'"' -f4)
           echo "Cluster health: $HEALTH"
 
           if [ "$HEALTH" = "green" ] || [ "$HEALTH" = "yellow" ]; then

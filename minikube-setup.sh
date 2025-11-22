@@ -355,6 +355,35 @@ test_elk_deployment() {
     fi
 }
 
+# Test all helm releases (application + monitoring + ELK) in one command
+test_all_helm() {
+    print_step "Running ALL Helm tests (application + monitoring + ELK)..."
+    local all_passed=true
+
+    print_info "Running application tests..."
+    if ! test_deployment; then
+        all_passed=false
+    fi
+
+    print_info "Running monitoring stack tests..."
+    if ! test_monitoring_deployment; then
+        all_passed=false
+    fi
+
+    print_info "Running ELK stack tests..."
+    if ! test_elk_deployment; then
+        all_passed=false
+    fi
+
+    if [ "$all_passed" = true ]; then
+        print_info "✓ All Helm tests passed successfully"
+        return 0
+    else
+        print_error "✗ Some Helm tests failed"
+        return 1
+    fi
+}
+
 # Test deployment using Helm tests
 test_deployment() {
     print_step "Running Helm tests..."
@@ -455,9 +484,9 @@ deploy_app() {
     echo "  kubectl port-forward -n ${NAMESPACE} svc/${HELM_RELEASE}-gateway-service 8100:8100"
     echo ""
     print_info "To access monitoring and logging, run:"
-    echo "  kubectl port-forward -n ${NAMESPACE} svc/bank-app-zipkin-zipkin 9411:9411"
-    echo "  kubectl port-forward -n ${NAMESPACE} svc/bank-app-prometheus-server 9090:80"
-    echo "  kubectl port-forward -n ${NAMESPACE} svc/bank-app-grafana 3000:80"
+    echo "  kubectl port-forward -n ${NAMESPACE} svc/bank-app-zipkin 9411:9411"
+    echo "  kubectl port-forward -n ${NAMESPACE} svc/bank-app-prometheus-server 9090:9090"
+    echo "  kubectl port-forward -n ${NAMESPACE} svc/bank-app-grafana 3000:3000"
     echo "  kubectl port-forward -n ${NAMESPACE} svc/bank-app-kibana-kibana 5601:5601"
 
     local minikube_ip
@@ -488,7 +517,8 @@ clean() {
     print_info "Uninstalling all Helm releases in ${NAMESPACE}..."
 
     # Get all Helm releases in the namespace
-    local releases=$(helm list -n ${NAMESPACE} -q 2>/dev/null || true)
+    local releases
+    releases=$(helm list -n ${NAMESPACE} -q 2>/dev/null || true)
 
     if [ -n "$releases" ]; then
         for release in $releases; do
@@ -507,7 +537,8 @@ clean() {
     local wait_time=0
     local max_wait=60
     while [ $wait_time -lt $max_wait ]; do
-        local pod_count=$(kubectl get pods -n ${NAMESPACE} --no-headers 2>/dev/null | grep -v "Completed" | wc -l)
+        local pod_count
+        pod_count=$(kubectl get pods -n ${NAMESPACE} --no-headers 2>/dev/null | grep -v "Completed" | wc -l)
         if [ "$pod_count" -eq 0 ]; then
             print_info "All pods terminated"
             break
@@ -519,7 +550,8 @@ clean() {
     echo ""
 
     # Force delete any remaining pods
-    local remaining_pods=$(kubectl get pods -n ${NAMESPACE} --no-headers 2>/dev/null | grep -v "Completed" | awk '{print $1}')
+    local remaining_pods
+    remaining_pods=$(kubectl get pods -n ${NAMESPACE} --no-headers 2>/dev/null | grep -v "Completed" | awk '{print $1}')
     if [ -n "$remaining_pods" ]; then
         print_warning "Force deleting remaining pods..."
         for pod in $remaining_pods; do
@@ -587,7 +619,7 @@ usage() {
     echo "  deploy               - Deploy application (includes Monitoring + ELK + tests)"
     echo "  deploy-monitoring    - Deploy only Monitoring Stack (Zipkin, Prometheus, Grafana)"
     echo "  deploy-elk           - Deploy only ELK Stack"
-    echo "  test                 - Run Helm tests on deployed application"
+    echo "  test                 - Run ALL Helm tests (application + monitoring + ELK)"
     echo "  test-monitoring      - Run Helm tests on Monitoring Stack"
     echo "  test-elk             - Run Helm tests on ELK Stack"
     echo "  redeploy             - Clean and deploy again"
@@ -602,7 +634,7 @@ usage() {
     echo "Examples:"
     echo "  $0 all                    # Complete setup"
     echo "  $0 deploy                 # Deploy app + ELK and run tests"
-    echo "  $0 test-elk               # Test ELK stack only"
+    echo "  $0 test                   # Run all Helm tests across stacks"
     echo "  IMAGE_TAG=1.0.0 $0 load   # Load images with specific tag"
 }
 
@@ -666,7 +698,7 @@ main() {
             deploy_elk_stack
             ;;
         test)
-            test_deployment
+            test_all_helm
             ;;
         test-monitoring)
             test_monitoring_deployment

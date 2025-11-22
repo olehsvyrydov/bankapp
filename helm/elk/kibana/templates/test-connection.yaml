@@ -6,7 +6,7 @@ metadata:
     {{- include "kibana.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-delete-policy": before-hook-creation
 spec:
   containers:
     - name: test-kibana
@@ -38,7 +38,7 @@ spec:
 
           # Check Kibana status
           echo "Checking Kibana status..."
-          STATUS=$(curl -s http://{{ .Release.Name }}-kibana:5601/api/status | grep -o '"level":"[^"]*"' | head -1 | cut -d'"' -f4)
+          STATUS=$(curl -s http://{{ .Release.Name }}-kibana:5601/api/status | grep -Eo '"level"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | cut -d'"' -f4)
           echo "Kibana status: $STATUS"
 
           if [ "$STATUS" = "available" ]; then
@@ -48,7 +48,7 @@ spec:
           fi
 
           # Check Elasticsearch connection from Kibana
-          ES_STATUS=$(curl -s http://{{ .Release.Name }}-kibana:5601/api/status | grep -o '"elasticsearch"[^}]*"level":"[^"]*"' | grep -o '"level":"[^"]*"' | cut -d'"' -f4)
+          ES_STATUS=$(curl -s http://{{ .Release.Name }}-kibana:5601/api/status | grep -Eo '"elasticsearch"[^}]*"level"[[:space:]]*:[[:space:]]*"[^"]*"' | grep -Eo '"level"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d'"' -f4)
           echo "Elasticsearch connection from Kibana: $ES_STATUS"
 
           if [ "$ES_STATUS" = "available" ]; then
