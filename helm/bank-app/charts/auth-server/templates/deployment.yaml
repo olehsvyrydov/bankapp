@@ -11,6 +11,11 @@ spec:
       {{- include "auth-server.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.service.port }}"
+        prometheus.io/path: "/actuator/prometheus"
+    metadata:
       labels:
         {{- include "auth-server.selectorLabels" . | nindent 8 }}
     spec:

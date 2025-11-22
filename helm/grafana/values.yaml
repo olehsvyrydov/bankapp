@@ -5,10 +5,22 @@ grafana:
   # Disable subchart tests (we have our own test-connection.yaml)
   testFramework:
     enabled: false
+
   # Admin credentials
+  # SECURITY WARNING: Change these defaults before deploying!
+  # For production, use existingSecret instead of plain text passwords
   adminUser: admin
-  adminPassword: admin
-  # For production, use a secret:
+  # Use a strong password or leave empty to auto-generate
+  # Override with: --set grafana.adminPassword=<your-password>
+  adminPassword: ""  # Empty string triggers random password generation
+
+  # RECOMMENDED: Use Kubernetes secret for production
+  # Steps to create secret:
+  #   kubectl create secret generic grafana-admin-credentials \
+  #     --from-literal=admin-user=admin \
+  #     --from-literal=admin-password=$(openssl rand -base64 32) \
+  #     -n bank-app-dev
+  # Then uncomment below:
   # admin:
   #   existingSecret: grafana-admin-credentials
   #   userKey: admin-user
@@ -44,7 +56,7 @@ grafana:
         - name: Prometheus
           type: prometheus
           access: proxy
-          url: http://bank-app-prometheus-prometheus-server:9090
+          url: http://bank-app-prometheus-server:9090
           isDefault: true
           jsonData:
             timeInterval: 15s

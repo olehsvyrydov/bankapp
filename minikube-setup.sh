@@ -83,6 +83,43 @@ check_helm() {
     print_info "helm is installed"
 }
 
+# Check cluster connectivity and health
+check_cluster_health() {
+    print_step "Checking cluster connectivity..."
+
+    local max_retries=5
+    local retry_count=0
+
+    while [ $retry_count -lt $max_retries ]; do
+        if timeout 10 kubectl get nodes &> /dev/null; then
+            print_info "✓ Cluster is responding"
+
+            # Check if nodes are ready
+            local not_ready=$(kubectl get nodes --no-headers 2>/dev/null | grep -v " Ready" | wc -l)
+            if [ "$not_ready" -gt 0 ]; then
+                print_warning "Some nodes are not ready yet, waiting..."
+                sleep 5
+                retry_count=$((retry_count + 1))
+                continue
+            fi
+
+            print_info "✓ All nodes are ready"
+            return 0
+        else
+            retry_count=$((retry_count + 1))
+            if [ $retry_count -lt $max_retries ]; then
+                print_warning "Cluster not responding, retrying ($retry_count/$max_retries)..."
+                sleep 5
+            else
+                print_error "Cluster is not responding after $max_retries attempts"
+                print_info "Try running: minikube status"
+                print_info "Or restart: minikube stop && minikube start"
+                exit 1
+            fi
+        fi
+    done
+}
+
 # Start minikube
 start_minikube() {
     print_step "Starting minikube..."
@@ -91,7 +128,8 @@ start_minikube() {
         print_info "minikube is already running"
     else
         print_info "Starting minikube cluster..."
-        minikube start --memory=8192 --cpus=4 --driver=docker
+        print_info "Allocating 10GB RAM and 4 CPUs (increased for resource-intensive services)"
+        minikube start --memory=10240 --cpus=4 --driver=docker
         print_info "minikube started successfully"
     fi
 
@@ -163,6 +201,9 @@ load_images() {
 deploy_monitoring_stack() {
     print_step "Deploying Monitoring Stack..."
 
+    # Check cluster health before deployment
+    check_cluster_health
+
     # Update Helm dependencies for monitoring charts
     print_info "Updating Helm dependencies for monitoring charts..."
     for chart in zipkin prometheus grafana; do
@@ -174,36 +215,82 @@ deploy_monitoring_stack() {
 
     # Deploy Zipkin
     print_info "Deploying Zipkin..."
-    helm upgrade --install bank-app-zipkin ./helm/zipkin \
-        --namespace ${NAMESPACE} \
-        --wait \
-        --timeout 10m || {
-        print_error "Failed to deploy Zipkin"
-        exit 1
-    }
-    print_info "✓ Zipkin deployed successfully"
+    local retry_count=0
+    local max_retries=3
+    while [ $retry_count -lt $max_retries ]; do
+        if helm upgrade --install bank-app-zipkin ./helm/zipkin \
+            --namespace ${NAMESPACE} \
+            --wait \
+            --timeout 10m; then
+            print_info "✓ Zipkin deployed successfully"
+            break
+        else
+            retry_count=$((retry_count + 1))
+            if [ $retry_count -lt $max_retries ]; then
+                print_warning "Zipkin deployment failed, retrying ($retry_count/$max_retries)..."
+                sleep 10
+            else
+                print_error "Failed to deploy Zipkin after $max_retries attempts"
+                exit 1
+            fi
+        fi
+    done
 
     # Deploy Prometheus
     print_info "Deploying Prometheus..."
-    helm upgrade --install bank-app-prometheus ./helm/prometheus \
-        --namespace ${NAMESPACE} \
-        --wait \
-        --timeout 10m || {
-        print_error "Failed to deploy Prometheus"
-        exit 1
-    }
-    print_info "✓ Prometheus deployed successfully"
+    local retry_count=0
+    local max_retries=3
+    while [ $retry_count -lt $max_retries ]; do
+        if helm upgrade --install bank-app-prometheus ./helm/prometheus \
+            --namespace ${NAMESPACE} \
+            --wait \
+            --timeout 10m; then
+            print_info "✓ Prometheus deployed successfully"
+            break
+        else
+            retry_count=$((retry_count + 1))
+            if [ $retry_count -lt $max_retries ]; then
+                print_warning "Prometheus deployment failed, retrying ($retry_count/$max_retries)..."
+                sleep 10
+            else
+                print_error "Failed to deploy Prometheus after $max_retries attempts"
+                exit 1
+            fi
+        fi
+    done
 
     # Deploy Grafana
     print_info "Deploying Grafana..."
-    helm upgrade --install bank-app-grafana ./helm/grafana \
-        --namespace ${NAMESPACE} \
-        --wait \
-        --timeout 10m || {
-        print_error "Failed to deploy Grafana"
-        exit 1
-    }
-    print_info "✓ Grafana deployed successfully"
+    print_warning "Using default password 'admin123' for dev environment"
+    print_info "To retrieve auto-generated password in production, use:"
+    print_info "  kubectl get secret bank-app-grafana -n ${NAMESPACE} -o jsonpath='{.data.admin-password}' | base64 -d"
+
+    # Retry logic for transient network issues
+    local retry_count=0
+    local max_retries=3
+    while [ $retry_count -lt $max_retries ]; do
+        if helm upgrade --install bank-app-grafana ./helm/grafana \
+            --namespace ${NAMESPACE} \
+            --set grafana.adminPassword=admin123 \
+            --wait \
+            --timeout 10m; then
+            print_info "✓ Grafana deployed successfully"
+            print_info "  Grafana credentials: admin / admin123"
+            break
+        else
+            retry_count=$((retry_count + 1))
+            if [ $retry_count -lt $max_retries ]; then
+                print_warning "Grafana deployment failed, retrying ($retry_count/$max_retries)..."
+                sleep 10
+            else
+                print_error "Failed to deploy Grafana after $max_retries attempts"
+                print_warning "This may be due to cluster connectivity issues"
+                print_info "Try running: minikube status"
+                print_info "Or restart with: minikube stop && minikube start"
+                exit 1
+            fi
+        fi
+    done
 
     print_info "✓ Monitoring Stack deployed successfully"
 }
@@ -415,6 +502,9 @@ test_deployment() {
 deploy_app() {
     print_step "Deploying application to minikube..."
 
+    # Check cluster health before deployment
+    check_cluster_health
+
     # Update Helm dependencies (downloads Kafka chart from Bitnami)
     print_info "Updating Helm dependencies..."
     helm dependency update ${HELM_CHART} || {
@@ -455,6 +545,13 @@ deploy_app() {
     fi
 
     print_info "Application deployed successfully"
+
+    # Clean up old ReplicaSets (zero replicas)
+    print_info "Cleaning up stale ReplicaSets (zero replicas)..."
+    kubectl -n ${NAMESPACE} delete rs --field-selector='status.replicas==0' 2>/dev/null || true
+
+    # Summarize pod restart counts
+    summarize_restarts
 
     # Deploy ELK stack after main app (Logstash needs Kafka to be running)
     deploy_elk_stack
@@ -502,6 +599,21 @@ deploy_app() {
     fi
 }
 
+# Utility: summarize restart counts and flag high restarts
+summarize_restarts() {
+  print_step "Summarizing pod restarts..."
+  local total=0
+  local high=0
+  while read -r count; do
+    [ -z "$count" ] && continue
+    total=$((total + count))
+    [ "$count" -gt 3 ] && high=$((high + 1))
+  done < <(kubectl -n ${NAMESPACE} get pods -o jsonpath='{.items[*].status.containerStatuses[*].restartCount}' 2>/dev/null | tr ' ' '\n')
+  print_info "Total restarts (current snapshot): ${total}"
+  if [ "$high" -gt 0 ]; then
+    print_warning "${high} container(s) have >3 restarts; investigate with: kubectl -n ${NAMESPACE} logs <pod> --previous"
+  fi
+}
 
 # Clean up deployment
 clean() {

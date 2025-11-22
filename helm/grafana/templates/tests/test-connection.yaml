@@ -48,9 +48,18 @@ spec:
           fi
 
           # Attempt authenticated org API (may require admin credentials)
-          ADMIN_USER="${GRAFANA_ADMIN_USER:-{{ .Values.grafana.adminUser }}}"
-          ADMIN_PASS="${GRAFANA_ADMIN_PASSWORD:-{{ .Values.grafana.adminPassword }}}"
+          # Handle auto-generated password case
+          ADMIN_USER="{{ .Values.grafana.adminUser }}"
+          {{- if .Values.grafana.adminPassword }}
+          ADMIN_PASS="{{ .Values.grafana.adminPassword }}"
+          {{- else }}
+          # Password is auto-generated, skip authenticated tests
+          ADMIN_PASS=""
+          echo "ℹ Note: Grafana password is auto-generated. Skipping authenticated API tests."
+          echo "ℹ To retrieve password: kubectl get secret {{ include "bank-app-grafana.fullname" . }} -n {{ .Release.Namespace }} -o jsonpath='{.data.admin-password}' | base64 -d"
+          {{- end }}
 
+          {{- if .Values.grafana.adminPassword }}
           echo "Testing Grafana /api/org (authenticated)..."
           ORG_RESPONSE_CODE=$(curl -u "$ADMIN_USER:$ADMIN_PASS" -s -o /dev/null -w '%{http_code}' http://{{ include "bank-app-grafana.fullname" . }}:3000/api/org || true)
           if [ "$ORG_RESPONSE_CODE" = "200" ]; then
@@ -59,16 +68,7 @@ spec:
             echo "⚠ Org API returned HTTP $ORG_RESPONSE_CODE (continuing)"
           fi
 
-          # Test a public search endpoint (should generally work even w/o auth if anonymous enabled)
-          echo "Testing Grafana search API..."
-          SEARCH_CODE=$(curl -s -o /dev/null -w '%{http_code}' http://{{ include "bank-app-grafana.fullname" . }}:3000/api/search?query= || true)
-          if [ "$SEARCH_CODE" = "200" ]; then
-            echo "✓ Grafana search API responded (200)"
-          else
-            echo "⚠ Grafana search API returned HTTP $SEARCH_CODE"
-          fi
-
-          # Check Prometheus datasource provisioning (allow some retries because sidecar may still apply dashboards)
+          # Check Prometheus datasource provisioning
           echo "Checking Prometheus datasource provisioning..."
           DS_RETRIES=0
           DS_MAX=10
@@ -86,6 +86,16 @@ spec:
           done
           if [ "$DS_FOUND" != true ]; then
             echo "⚠ Prometheus datasource not detected after retries (may still be provisioning)"
+          fi
+          {{- end }}
+
+          # Test a public search endpoint (should generally work even w/o auth if anonymous enabled)
+          echo "Testing Grafana search API..."
+          SEARCH_CODE=$(curl -s -o /dev/null -w '%{http_code}' http://{{ include "bank-app-grafana.fullname" . }}:3000/api/search?query= || true)
+          if [ "$SEARCH_CODE" = "200" ]; then
+            echo "✓ Grafana search API responded (200)"
+          else
+            echo "⚠ Grafana search API returned HTTP $SEARCH_CODE"
           fi
 
           echo "✓ Grafana test routine completed"
