@@ -396,9 +396,8 @@ deploy_app() {
     # Create namespace if it doesn't exist
     kubectl create namespace ${NAMESPACE} 2>/dev/null || print_info "Namespace ${NAMESPACE} already exists"
 
-    # Deploy monitoring and logging stacks first (before main app)
+    # Deploy monitoring stack first (Zipkin, Prometheus, Grafana)
     deploy_monitoring_stack
-    deploy_elk_stack
 
     # Check if release exists and is deployed
     if helm list -n ${NAMESPACE} --deployed -q | grep -q "^${HELM_RELEASE}$"; then
@@ -427,6 +426,9 @@ deploy_app() {
     fi
 
     print_info "Application deployed successfully"
+
+    # Deploy ELK stack after main app (Logstash needs Kafka to be running)
+    deploy_elk_stack
 
     echo ""
     print_info "Checking pod status..."
