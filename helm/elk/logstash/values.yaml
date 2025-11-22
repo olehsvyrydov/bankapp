@@ -132,6 +132,33 @@ logstash:
     #       name: elasticsearch-credentials
     #       key: password
 
+  # Init containers to wait for dependencies
+  extraInitContainers:
+    - name: wait-for-elasticsearch
+      image: "busybox:1.36"
+      command:
+        - sh
+        - -c
+        - |
+          echo "Waiting for Elasticsearch..."
+          until nc -z bank-app-elasticsearch-master 9200; do
+            echo "Elasticsearch not ready, waiting..."
+            sleep 2
+          done
+          echo "Elasticsearch is ready!"
+    - name: wait-for-kafka
+      image: "busybox:1.36"
+      command:
+        - sh
+        - -c
+        - |
+          echo "Waiting for Kafka..."
+          until nc -z bank-app-kafka 9092; do
+            echo "Kafka not ready, waiting..."
+            sleep 2
+          done
+          echo "Kafka is ready!"
+
   # Probes
   livenessProbe:
     httpGet:
@@ -139,6 +166,8 @@ logstash:
       port: 9600
     initialDelaySeconds: 60
     periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
 
   readinessProbe:
     httpGet:
@@ -146,3 +175,5 @@ logstash:
       port: 9600
     initialDelaySeconds: 30
     periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 10
