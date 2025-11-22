@@ -159,6 +159,55 @@ load_images() {
     print_info "All images loaded into minikube successfully"
 }
 
+# Deploy monitoring stack (Zipkin, Prometheus, Grafana)
+deploy_monitoring_stack() {
+    print_step "Deploying Monitoring Stack..."
+
+    # Update Helm dependencies for monitoring charts
+    print_info "Updating Helm dependencies for monitoring charts..."
+    for chart in zipkin prometheus grafana; do
+        helm dependency update "./helm/${chart}" || {
+            print_error "Failed to update Helm dependencies for ${chart}"
+            exit 1
+        }
+    done
+
+    # Deploy Zipkin
+    print_info "Deploying Zipkin..."
+    helm upgrade --install bank-app-zipkin ./helm/zipkin \
+        --namespace ${NAMESPACE} \
+        --wait \
+        --timeout 10m || {
+        print_error "Failed to deploy Zipkin"
+        exit 1
+    }
+    print_info "✓ Zipkin deployed successfully"
+
+    # Deploy Prometheus
+    print_info "Deploying Prometheus..."
+    helm upgrade --install bank-app-prometheus ./helm/prometheus \
+        --namespace ${NAMESPACE} \
+        --wait \
+        --timeout 10m || {
+        print_error "Failed to deploy Prometheus"
+        exit 1
+    }
+    print_info "✓ Prometheus deployed successfully"
+
+    # Deploy Grafana
+    print_info "Deploying Grafana..."
+    helm upgrade --install bank-app-grafana ./helm/grafana \
+        --namespace ${NAMESPACE} \
+        --wait \
+        --timeout 10m || {
+        print_error "Failed to deploy Grafana"
+        exit 1
+    }
+    print_info "✓ Grafana deployed successfully"
+
+    print_info "✓ Monitoring Stack deployed successfully"
+}
+
 # Deploy ELK Stack
 deploy_elk_stack() {
     print_step "Deploying ELK Stack..."
@@ -216,6 +265,50 @@ deploy_elk_stack() {
     print_info "✓ Kibana deployed successfully"
 
     print_info "✓ ELK Stack deployed successfully"
+}
+
+# Test monitoring stack deployment
+test_monitoring_deployment() {
+    print_step "Running Monitoring Stack Helm tests..."
+
+    local all_passed=true
+
+    # Test Zipkin
+    print_info "Testing Zipkin..."
+    if helm test bank-app-zipkin -n ${NAMESPACE} --logs; then
+        print_info "✓ Zipkin tests passed"
+    else
+        print_error "✗ Zipkin tests failed"
+        all_passed=false
+    fi
+
+    # Test Prometheus
+    print_info "Testing Prometheus..."
+    if helm test bank-app-prometheus -n ${NAMESPACE} --logs; then
+        print_info "✓ Prometheus tests passed"
+    else
+        print_error "✗ Prometheus tests failed"
+        all_passed=false
+    fi
+
+    # Test Grafana
+    print_info "Testing Grafana..."
+    if helm test bank-app-grafana -n ${NAMESPACE} --logs; then
+        print_info "✓ Grafana tests passed"
+    else
+        print_error "✗ Grafana tests failed"
+        all_passed=false
+    fi
+
+    if [ "$all_passed" = true ]; then
+        echo ""
+        print_info "✓ All Monitoring tests passed successfully!"
+        return 0
+    else
+        echo ""
+        print_error "✗ Some Monitoring tests failed!"
+        return 1
+    fi
 }
 
 # Test ELK deployment
@@ -303,7 +396,8 @@ deploy_app() {
     # Create namespace if it doesn't exist
     kubectl create namespace ${NAMESPACE} 2>/dev/null || print_info "Namespace ${NAMESPACE} already exists"
 
-    # Deploy ELK Stack first (before main app)
+    # Deploy monitoring and logging stacks first (before main app)
+    deploy_monitoring_stack
     deploy_elk_stack
 
     # Check if release exists and is deployed
@@ -340,7 +434,7 @@ deploy_app() {
 
     echo ""
     print_info "Running Helm tests to verify deployment..."
-    if test_deployment && test_elk_deployment; then
+    if test_deployment && test_monitoring_deployment && test_elk_deployment; then
         echo ""
         print_info "Deployment verification completed successfully!"
     else
@@ -357,6 +451,11 @@ deploy_app() {
     print_info "To access the application, run:"
     echo "  kubectl port-forward -n ${NAMESPACE} svc/${HELM_RELEASE}-front-ui 8090:8090"
     echo "  kubectl port-forward -n ${NAMESPACE} svc/${HELM_RELEASE}-gateway-service 8100:8100"
+    echo ""
+    print_info "To access monitoring and logging, run:"
+    echo "  kubectl port-forward -n ${NAMESPACE} svc/bank-app-zipkin-zipkin 9411:9411"
+    echo "  kubectl port-forward -n ${NAMESPACE} svc/bank-app-prometheus-server 9090:80"
+    echo "  kubectl port-forward -n ${NAMESPACE} svc/bank-app-grafana 3000:80"
     echo "  kubectl port-forward -n ${NAMESPACE} svc/bank-app-kibana-kibana 5601:5601"
 
     local minikube_ip
@@ -385,6 +484,12 @@ clean() {
     else
         print_warning "Helm release ${HELM_RELEASE} not found"
     fi
+
+    # Uninstall Monitoring Stack
+    print_info "Uninstalling Monitoring Stack..."
+    helm uninstall bank-app-grafana -n ${NAMESPACE} 2>/dev/null || print_warning "Grafana release not found"
+    helm uninstall bank-app-prometheus -n ${NAMESPACE} 2>/dev/null || print_warning "Prometheus release not found"
+    helm uninstall bank-app-zipkin -n ${NAMESPACE} 2>/dev/null || print_warning "Zipkin release not found"
 
     # Uninstall ELK Stack
     print_info "Uninstalling ELK Stack..."
@@ -417,18 +522,20 @@ usage() {
     echo "Usage: $0 [command]"
     echo ""
     echo "Commands:"
-    echo "  all           - Run complete setup (start + load + deploy)"
-    echo "  start         - Start minikube cluster"
-    echo "  load          - Build images directly in minikube's Docker daemon"
-    echo "  deploy        - Deploy application using Helm (includes ELK + tests)"
-    echo "  deploy-elk    - Deploy only ELK Stack"
-    echo "  test          - Run Helm tests on deployed application"
-    echo "  test-elk      - Run Helm tests on ELK Stack"
-    echo "  redeploy      - Clean and deploy again"
-    echo "  clean         - Remove deployment and namespace (includes ELK)"
-    echo "  stop          - Stop minikube cluster"
-    echo "  delete        - Delete minikube cluster completely"
-    echo "  status        - Show cluster and deployment status"
+    echo "  all                  - Run complete setup (start + load + deploy)"
+    echo "  start                - Start minikube cluster"
+    echo "  load                 - Build images directly in minikube's Docker daemon"
+    echo "  deploy               - Deploy application (includes Monitoring + ELK + tests)"
+    echo "  deploy-monitoring    - Deploy only Monitoring Stack (Zipkin, Prometheus, Grafana)"
+    echo "  deploy-elk           - Deploy only ELK Stack"
+    echo "  test                 - Run Helm tests on deployed application"
+    echo "  test-monitoring      - Run Helm tests on Monitoring Stack"
+    echo "  test-elk             - Run Helm tests on ELK Stack"
+    echo "  redeploy             - Clean and deploy again"
+    echo "  clean                - Remove all deployments and namespace"
+    echo "  stop                 - Stop minikube cluster"
+    echo "  delete               - Delete minikube cluster completely"
+    echo "  status               - Show cluster and deployment status"
     echo ""
     echo "Environment variables:"
     echo "  IMAGE_TAG     - Docker image tag (default: latest)"
@@ -493,11 +600,17 @@ main() {
         deploy)
             deploy_app
             ;;
+        deploy-monitoring)
+            deploy_monitoring_stack
+            ;;
         deploy-elk)
             deploy_elk_stack
             ;;
         test)
             test_deployment
+            ;;
+        test-monitoring)
+            test_monitoring_deployment
             ;;
         test-elk)
             test_elk_deployment

@@ -107,3 +107,7 @@ elasticsearch:
   # System calls filter - may need to be disabled on some systems
   sysctlInitContainer:
     enabled: true
+
+  # Disable subchart tests (we have our own test-connection.yaml)
+  tests:
+    enabled: false

@@ -19,10 +19,11 @@ spec:
           echo "Testing Elasticsearch connection..."
 
           # Wait for Elasticsearch to be ready
+          # Note: The subchart creates service as {{ .Release.Name }}-master
           MAX_RETRIES=30
           RETRY_COUNT=0
           while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-            if curl -sf http://{{ .Release.Name }}-elasticsearch-master:9200/_cluster/health; then
+            if curl -sf http://{{ .Release.Name }}-master:9200/_cluster/health; then
               echo "✓ Elasticsearch is accessible"
               break
             fi
@@ -37,7 +38,7 @@ spec:
           fi
 
           # Check cluster health
-          HEALTH=$(curl -s http://{{ .Release.Name }}-elasticsearch-master:9200/_cluster/health | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
+          HEALTH=$(curl -s http://{{ .Release.Name }}-master:9200/_cluster/health | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
           echo "Cluster health: $HEALTH"
 
           if [ "$HEALTH" = "green" ] || [ "$HEALTH" = "yellow" ]; then
@@ -48,7 +49,7 @@ spec:
           fi
 
           # Verify nodes
-          NODES=$(curl -s http://{{ .Release.Name }}-elasticsearch-master:9200/_cat/nodes?h=name | wc -l)
+          NODES=$(curl -s http://{{ .Release.Name }}-master:9200/_cat/nodes?h=name | wc -l)
           echo "✓ Elasticsearch has $NODES node(s)"
 
           echo "✓ All Elasticsearch tests passed!"

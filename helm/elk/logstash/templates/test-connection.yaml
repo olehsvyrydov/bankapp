@@ -22,7 +22,7 @@ spec:
           MAX_RETRIES=30
           RETRY_COUNT=0
           while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-            if curl -sf http://{{ .Release.Name }}-logstash:9600; then
+            if curl -sf http://{{ .Release.Name }}-logstash-headless:9600; then
               echo "✓ Logstash is accessible"
               break
             fi
@@ -38,17 +38,14 @@ spec:
 
           # Check Logstash health
           echo "Checking Logstash health..."
-          RESPONSE=$(curl -s http://{{ .Release.Name }}-logstash:9600)
+          RESPONSE=$(curl -s http://{{ .Release.Name }}-logstash-headless:9600)
           echo "$RESPONSE"
 
-          # Check if pipeline is running
-          PIPELINE_STATUS=$(curl -s http://{{ .Release.Name }}-logstash:9600/_node/stats/pipelines | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
-          echo "Pipeline status: $PIPELINE_STATUS"
-
-          if [ "$PIPELINE_STATUS" = "green" ]; then
-            echo "✓ Logstash pipeline is healthy"
+          # Verify Logstash is responding
+          if echo "$RESPONSE" | grep -q "version"; then
+            echo "✓ Logstash is responding correctly"
           else
-            echo "⚠ Logstash pipeline status: $PIPELINE_STATUS (not critical)"
+            echo "⚠ Unexpected response from Logstash"
           fi
 
           echo "✓ All Logstash tests passed!"
