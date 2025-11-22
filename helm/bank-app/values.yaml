@@ -52,6 +52,8 @@ global:
 
   # Global Kafka configuration
   kafka:
+    host: bank-app-kafka
+    port: 9092
     bootstrapServers: bank-app-kafka:9092
 
   # Global resource defaults
