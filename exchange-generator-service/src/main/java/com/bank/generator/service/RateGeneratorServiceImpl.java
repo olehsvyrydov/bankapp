@@ -1,5 +1,6 @@
 package com.bank.generator.service;
 
+import com.bank.common.metrics.CustomMetricsService;
 import com.bank.generator.kafka.ExchangeRateProducer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,8 +17,8 @@ public class RateGeneratorServiceImpl extends AbstractRateGeneratorService {
 
     private final ThreadLocalRandom random = ThreadLocalRandom.current();
 
-    public RateGeneratorServiceImpl(ExchangeRateProducer exchangeRateProducer) {
-        super(exchangeRateProducer);
+    public RateGeneratorServiceImpl(ExchangeRateProducer exchangeRateProducer, CustomMetricsService metricsService) {
+        super(exchangeRateProducer, metricsService);
     }
 
     @Transactional

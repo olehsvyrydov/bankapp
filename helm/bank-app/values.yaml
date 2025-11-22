@@ -52,6 +52,8 @@ global:
 
   # Global Kafka configuration
   kafka:
+    host: bank-app-kafka
+    port: 9092
     bootstrapServers: bank-app-kafka:9092
 
   # Global resource defaults
@@ -156,6 +158,8 @@ customKafka:
       partitions: 3
     - name: bank.exchange.rates
       partitions: 3
+    - name: bank.logs
+      partitions: 5
 
 # Auth Server subchart configuration
 auth-server:

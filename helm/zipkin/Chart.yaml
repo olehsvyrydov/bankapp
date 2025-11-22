@@ -1,0 +1,11 @@
+apiVersion: v2
+name: bank-app-zipkin
+description: Zipkin distributed tracing for Bank Application
+type: application
+version: 1.0.0
+appVersion: "3.4.2"
+
+dependencies:
+  - name: zipkin
+    version: "0.3.0"
+    repository: https://openzipkin.github.io/zipkin

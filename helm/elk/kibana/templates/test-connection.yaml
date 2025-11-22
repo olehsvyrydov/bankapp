@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ .Release.Name }}-test-connection"
+  labels:
+    {{- include "kibana.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  containers:
+    - name: test-kibana
+      image: curlimages/curl:8.1.2
+      command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          echo "Testing Kibana connection..."
+
+          # Wait for Kibana to be ready
+          MAX_RETRIES=60
+          RETRY_COUNT=0
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if curl -sf http://{{ .Release.Name }}-kibana:5601/api/status > /dev/null 2>&1; then
+              echo "✓ Kibana is accessible"
+              break
+            fi
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            echo "Waiting for Kibana... ($RETRY_COUNT/$MAX_RETRIES)"
+            sleep 3
+          done
+
+          if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+            echo "✗ Failed to connect to Kibana after $MAX_RETRIES attempts"
+            exit 1
+          fi
+
+          # Check Kibana status
+          echo "Checking Kibana status..."
+          STATUS=$(curl -s http://{{ .Release.Name }}-kibana:5601/api/status | grep -Eo '"level"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | cut -d'"' -f4)
+          echo "Kibana status: $STATUS"
+
+          if [ "$STATUS" = "available" ]; then
+            echo "✓ Kibana is healthy and available"
+          else
+            echo "⚠ Kibana status: $STATUS"
+          fi
+
+          # Check Elasticsearch connection from Kibana
+          ES_STATUS=$(curl -s http://{{ .Release.Name }}-kibana:5601/api/status | grep -Eo '"elasticsearch"[^}]*"level"[[:space:]]*:[[:space:]]*"[^"]*"' | grep -Eo '"level"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d'"' -f4)
+          echo "Elasticsearch connection from Kibana: $ES_STATUS"
+
+          if [ "$ES_STATUS" = "available" ]; then
+            echo "✓ Kibana successfully connected to Elasticsearch"
+          else
+            echo "✗ Kibana cannot connect to Elasticsearch: $ES_STATUS"
+            exit 1
+          fi
+
+          echo "✓ All Kibana tests passed!"
+  restartPolicy: Never

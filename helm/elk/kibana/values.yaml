@@ -1,0 +1,145 @@
+# Default values for bank-app-kibana
+# This is a wrapper chart for the official Kibana Helm chart
+
+kibana:
+  # Use HTTP protocol (not HTTPS) for Elasticsearch connection
+  protocol: http
+
+  # Disable service account token creation (not needed when ES security is disabled)
+  createV1ServiceAccountToken: false
+
+  # Disable secret mounts (no certificates needed when security is disabled)
+  secretMounts: []
+
+  # Number of replicas
+  replicas: 1
+
+  # Resources
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 5601
+
+  # Elasticsearch connection
+  elasticsearchHosts: "http://bank-app-elasticsearch-master:9200"
+
+  # Kibana configuration
+  kibanaConfig:
+    kibana.yml: |
+      # Server configuration
+      server.name: kibana
+      server.host: "0.0.0.0"
+      server.port: 5601
+
+      # Elasticsearch configuration
+      elasticsearch.hosts: ["${ELASTICSEARCH_HOSTS:http://bank-app-elasticsearch-master:9200}"]
+
+      # Disable security for dev (enable for production)
+      # For Elasticsearch 8.x without security
+      elasticsearch.ssl.verificationMode: none
+
+      # For production with security:
+      # elasticsearch.username: "${ELASTICSEARCH_USERNAME:kibana}"
+      # elasticsearch.password: "${ELASTICSEARCH_PASSWORD:changeme}"
+      # elasticsearch.ssl.certificateAuthorities: ["/usr/share/kibana/config/certs/ca.crt"]
+
+      # Monitoring
+      monitoring.ui.container.elasticsearch.enabled: true
+
+      # Telemetry
+      telemetry.enabled: false
+      telemetry.optIn: false
+
+      # Logging
+      logging.root.level: info
+
+  # Environment variables
+  extraEnvs:
+    - name: ELASTICSEARCH_HOSTS
+      value: "http://bank-app-elasticsearch-master:9200"
+    # For production with authentication:
+    # - name: ELASTICSEARCH_USERNAME
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: elasticsearch-credentials
+    #       key: username
+    # - name: ELASTICSEARCH_PASSWORD
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: elasticsearch-credentials
+    #       key: password
+
+  # Init container to create index pattern
+  extraInitContainers: |
+    - name: wait-for-elasticsearch
+      image: docker.elastic.co/kibana/kibana:8.5.1
+      command:
+        - sh
+        - -c
+        - |
+          until curl -s http://bank-app-elasticsearch-master:9200/_cluster/health | grep -q '"status":"green"\|"status":"yellow"'; do
+            echo "Waiting for Elasticsearch to be ready..."
+            sleep 5
+          done
+          echo "Elasticsearch is ready"
+
+  # Lifecycle hooks to create index patterns after Kibana starts
+  lifecycle:
+    postStart:
+      exec:
+        command:
+          - bash
+          - -c
+          - |
+            # Wait for Kibana to be ready
+            until curl -s -f http://localhost:5601/api/status | grep -q '"level":"available"'; do
+              echo "Waiting for Kibana to be ready..."
+              sleep 5
+            done
+
+            # Create index pattern for bank-logs
+            curl -X POST "http://localhost:5601/api/saved_objects/index-pattern/bank-logs" \
+              -H 'kbn-xsrf: true' \
+              -H 'Content-Type: application/json' \
+              -d '{
+                "attributes": {
+                  "title": "bank-logs-*",
+                  "timeFieldName": "@timestamp"
+                }
+              }' || true
+
+            # Set default index pattern
+            curl -X POST "http://localhost:5601/api/kibana/settings/defaultIndex" \
+              -H 'kbn-xsrf: true' \
+              -H 'Content-Type: application/json' \
+              -d '{"value":"bank-logs"}' || true
+
+            echo "Index pattern created"
+
+  # Health probes
+  healthCheckPath: "/api/status"
+
+  readinessProbe:
+    failureThreshold: 3
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 5
+
+  livenessProbe:
+    failureThreshold: 3
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 5
+
+  # Image pull policy
+  imagePullPolicy: "IfNotPresent"

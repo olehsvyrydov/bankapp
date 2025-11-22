@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: accounts-service
+  profiles:
+    include: tracing,metrics
 
   datasource:
     driver-class-name: org.postgresql.Driver

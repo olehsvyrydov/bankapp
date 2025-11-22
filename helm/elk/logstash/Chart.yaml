@@ -1,0 +1,11 @@
+apiVersion: v2
+name: bank-app-logstash
+description: Logstash for log processing in Bank Application
+type: application
+version: 1.0.0
+appVersion: "8.5.1"
+
+dependencies:
+  - name: logstash
+    version: "8.5.1"
+    repository: https://helm.elastic.co
