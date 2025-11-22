@@ -476,31 +476,88 @@ deploy_app() {
 clean() {
     print_step "Cleaning up deployment..."
 
-    # Uninstall main app
-    if helm list -n ${NAMESPACE} | grep -q ${HELM_RELEASE}; then
-        print_info "Uninstalling Helm release..."
-        helm uninstall ${HELM_RELEASE} -n ${NAMESPACE}
-        print_info "Helm release uninstalled"
-    else
-        print_warning "Helm release ${HELM_RELEASE} not found"
+    # Check if namespace exists
+    if ! kubectl get namespace ${NAMESPACE} &> /dev/null; then
+        print_warning "Namespace ${NAMESPACE} does not exist"
+        return 0
     fi
 
-    # Uninstall Monitoring Stack
-    print_info "Uninstalling Monitoring Stack..."
-    helm uninstall bank-app-grafana -n ${NAMESPACE} 2>/dev/null || print_warning "Grafana release not found"
-    helm uninstall bank-app-prometheus -n ${NAMESPACE} 2>/dev/null || print_warning "Prometheus release not found"
-    helm uninstall bank-app-zipkin -n ${NAMESPACE} 2>/dev/null || print_warning "Zipkin release not found"
+    # Uninstall all Helm releases
+    print_info "Uninstalling all Helm releases in ${NAMESPACE}..."
 
-    # Uninstall ELK Stack
-    print_info "Uninstalling ELK Stack..."
-    helm uninstall bank-app-kibana -n ${NAMESPACE} 2>/dev/null || print_warning "Kibana release not found"
-    helm uninstall bank-app-logstash -n ${NAMESPACE} 2>/dev/null || print_warning "Logstash release not found"
-    helm uninstall bank-app-elasticsearch -n ${NAMESPACE} 2>/dev/null || print_warning "Elasticsearch release not found"
+    # Get all Helm releases in the namespace
+    local releases=$(helm list -n ${NAMESPACE} -q 2>/dev/null || true)
 
+    if [ -n "$releases" ]; then
+        for release in $releases; do
+            print_info "Uninstalling $release..."
+            helm uninstall $release -n ${NAMESPACE} --wait --timeout 5m 2>/dev/null || {
+                print_warning "Failed to cleanly uninstall $release, forcing deletion..."
+                helm uninstall $release -n ${NAMESPACE} --no-hooks 2>/dev/null || true
+            }
+        done
+    else
+        print_info "No Helm releases found in ${NAMESPACE}"
+    fi
+
+    # Wait for pods to terminate
+    print_info "Waiting for pods to terminate (max 60s)..."
+    local wait_time=0
+    local max_wait=60
+    while [ $wait_time -lt $max_wait ]; do
+        local pod_count=$(kubectl get pods -n ${NAMESPACE} --no-headers 2>/dev/null | grep -v "Completed" | wc -l)
+        if [ "$pod_count" -eq 0 ]; then
+            print_info "All pods terminated"
+            break
+        fi
+        echo -n "."
+        sleep 2
+        wait_time=$((wait_time + 2))
+    done
+    echo ""
+
+    # Force delete any remaining pods
+    local remaining_pods=$(kubectl get pods -n ${NAMESPACE} --no-headers 2>/dev/null | grep -v "Completed" | awk '{print $1}')
+    if [ -n "$remaining_pods" ]; then
+        print_warning "Force deleting remaining pods..."
+        for pod in $remaining_pods; do
+            kubectl delete pod $pod -n ${NAMESPACE} --force --grace-period=0 2>/dev/null || true
+        done
+    fi
+
+    # Delete all resources in namespace
+    print_info "Deleting all resources in namespace..."
+    kubectl delete all --all -n ${NAMESPACE} --force --grace-period=0 2>/dev/null || true
+    kubectl delete pvc --all -n ${NAMESPACE} --force --grace-period=0 2>/dev/null || true
+    kubectl delete configmap --all -n ${NAMESPACE} 2>/dev/null || true
+    kubectl delete secret --all -n ${NAMESPACE} 2>/dev/null || true
+
+    # Delete namespace
     print_info "Deleting namespace ${NAMESPACE}..."
-    kubectl delete namespace ${NAMESPACE} --ignore-not-found=true
+    kubectl delete namespace ${NAMESPACE} --timeout=60s 2>/dev/null || {
+        print_warning "Namespace deletion timed out, forcing..."
+        # Remove finalizers if stuck
+        kubectl get namespace ${NAMESPACE} -o json 2>/dev/null | \
+            jq '.spec.finalizers = []' | \
+            kubectl replace --raw "/api/v1/namespaces/${NAMESPACE}/finalize" -f - 2>/dev/null || true
+    }
 
-    print_info "Cleanup completed"
+    # Wait for namespace to be deleted
+    wait_time=0
+    max_wait=30
+    while kubectl get namespace ${NAMESPACE} &> /dev/null && [ $wait_time -lt $max_wait ]; do
+        echo -n "."
+        sleep 1
+        wait_time=$((wait_time + 1))
+    done
+    echo ""
+
+    if kubectl get namespace ${NAMESPACE} &> /dev/null; then
+        print_error "Failed to delete namespace ${NAMESPACE}"
+        print_info "You may need to manually delete it: kubectl delete namespace ${NAMESPACE} --force --grace-period=0"
+    else
+        print_info "✓ Cleanup completed successfully"
+    fi
 }
 
 # Stop minikube
