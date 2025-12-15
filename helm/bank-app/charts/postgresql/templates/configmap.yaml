@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "postgresql.fullname" . }}-init
+  labels:
+    {{- include "postgresql.labels" . | nindent 4 }}
+data:
+  init-schemas.sh: |
+    #!/bin/bash
+    set -e
+
+    echo "Creating database schemas..."
+
+    {{- range .Values.schemas }}
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+      CREATE SCHEMA IF NOT EXISTS {{ . }};
+      GRANT ALL PRIVILEGES ON SCHEMA {{ . }} TO $POSTGRES_USER;
+    EOSQL
+    echo "Schema {{ . }} created successfully"
+    {{- end }}
+
+    echo "All schemas created successfully"

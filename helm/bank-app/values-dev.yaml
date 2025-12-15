@@ -1,0 +1,56 @@
+# Development environment values
+global:
+  namespace: bank-app-dev
+  environment: dev
+
+  image:
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  resources:
+    limits:
+      memory: 512Mi
+      cpu: 500m
+    requests:
+      memory: 256Mi
+      cpu: 250m
+
+# Development-specific PostgreSQL settings
+postgresql:
+  storageSize: 5Gi
+
+# Single replica for all services in dev
+auth-server:
+  replicaCount: 1
+
+accounts-service:
+  replicaCount: 1
+
+transfer-service:
+  replicaCount: 1
+
+cash-service:
+  replicaCount: 1
+
+exchange-service:
+  replicaCount: 1
+
+exchange-generator-service:
+  replicaCount: 1
+
+notifications-service:
+  replicaCount: 1
+
+blocker-service:
+  replicaCount: 1
+
+gateway-service:
+  replicaCount: 1
+
+front-ui:
+  replicaCount: 1
+
+# Ingress for dev
+ingress:
+  enabled: true
+  host: bank-app-dev.local

@@ -1,0 +1,12 @@
+apiVersion: v2
+name: auth-server
+description: OAuth2 Authorization Server for Bank application
+type: application
+version: 1.0.0
+appVersion: "2.0.0"
+keywords:
+  - oauth2
+  - authorization
+  - spring-boot
+maintainers:
+  - name: Bank App Team

@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: cash-service
+  profiles:
+    include: tracing,metrics
   config:
     import: "optional:configserver:${CONFIG_SERVER_URL:http://config-server:8888}"
 
@@ -77,3 +79,8 @@ management:
       exposure:
         include: health,info
 
+clients:
+  gateway:
+    service-id: ${GATEWAY_SERVICE_ID:bank-app-gateway-service}
+  auth:
+    service-id: ${AUTH_SERVICE_ID:bank-app-auth-server}

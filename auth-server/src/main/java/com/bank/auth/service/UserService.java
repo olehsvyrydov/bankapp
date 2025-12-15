@@ -3,8 +3,8 @@ package com.bank.auth.service;
 
 import com.bank.auth.entity.User;
 import com.bank.auth.repository.UserRepository;
-import com.bank.common.dto.contracts.auth.UserDTO;
-import com.bank.common.dto.contracts.auth.UserRegistrationRequest;
+import com.bank.common.auth.UserDTO;
+import com.bank.common.auth.UserRegistrationRequest;
 import com.bank.common.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;

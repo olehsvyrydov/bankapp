@@ -1,64 +1,171 @@
-# Банковское приложение (Yandex Study Project)
+# Bank Application - Microservices Architecture
 
-Много сервисов, которые вместе предоставляют функционал банковского приложения: регистрация пользователей, управление счетами, денежные операции, обмен валют, уведомления и т.д. В проекте использованы Spring Boot, Spring Cloud, PostgreSQL, Docker Compose и фронт на Thymeleaf.
+**[Русская версия / Russian version](README-RU.md)**
 
-## Структура
+Microservices-based banking application with comprehensive monitoring and logging.
 
-- `auth-server` – OAuth2 сервер авторизации, выдает токены и управляет пользователями.
-- `accounts-service` – учетные записи клиентов, банковские счета, балансы.
-- `cash-service` – депозиты и снятие средств.
-- `transfer-service` – переводы между счетами и пользователями.
-- `exchange-service`, `exchange-generator-service` – курсы валют и их генерация.
-- `blocker-service` – проверка подозрительных операций.
-- `notifications-service` – рассылка уведомлений.
-- `gateway-service` – API gateway (Spring Cloud Gateway).
-- `config-server` + `eureka-server` – конфигурации и сервис-дискавери.
-- `front-ui` – пользовательский веб-интерфейс.
+## Quick Start
 
-## Запуск
-
-Требования: Docker и Docker Compose, Java 21, Maven. Из корня репозитория:
-```bash
-cd bankapp-common/bankapp
-mvn -DskipTests package
-docker compose up --build
-```
-Стек поднимается несколько минут. UI доступен на http://localhost:8090, Gateway на http://localhost:8080, Eureka – http://localhost:8761.
-
-## Тесты
+### Deploy Locally (Minikube)
 
 ```bash
-mvn test
+# Complete setup (build + deploy + monitoring + ELK)
+./minikube-setup.sh all
+
+# Deploy monitoring stack only
+./minikube-setup.sh deploy-monitoring
+
+# Deploy ELK stack only  
+./minikube-setup.sh deploy-elk
+
+# Run tests
+./minikube-setup.sh test
+./minikube-setup.sh test-monitoring
+./minikube-setup.sh test-elk
 ```
-Большинство модулей имеют unit/integration тесты (фронт, transfer, auth и др.).
 
-## Пользователи по умолчанию
+### Deploy with Jenkins
 
-В `auth-server` при старте создаются учетные данные:
-- **admin** / `password` – администратор.
-- **tester** / `password` – тестовый пользователь.
+1. **Main Application Pipeline**: Jenkinsfile (root)
+   - Builds all services
+   - Deploys to dev/test/prod
+   - Triggers monitoring deployment
 
-У каждого пользователя есть набор банковских счетов (создаются в `accounts-service` миграциями). Для входа в UI используйте логин/пароль и затем работайте с личными счетами, переводами и пр.
+2. **Monitoring Stack Pipeline**: monitoring/Jenkinsfile
+   - Deploys Zipkin, Prometheus, Grafana
+   - Deploys ELK Stack (Elasticsearch, Logstash, Kibana)
 
-## Полезные команды
+## Access Services
 
-- Сборка без тестов: `mvn -DskipTests package`
-- Локальный запуск отдельных сервисов: `mvn spring-boot:run -pl <module>`
-- Просмотр логов docker: `docker compose logs <service>`
-- Остановка стека: `docker compose down`
+```bash
+# Application
+kubectl port-forward -n bank-app-dev svc/bank-app-front-ui 8090:8090
+kubectl port-forward -n bank-app-dev svc/bank-app-gateway-service 8100:8100
 
-## Использование
+# Monitoring
+kubectl port-forward -n bank-app-dev svc/bank-app-zipkin 9411:9411
+kubectl port-forward -n bank-app-dev svc/bank-app-prometheus-server 9090:9090
+kubectl port-forward -n bank-app-dev svc/bank-app-grafana 3000:3000
 
-После входа в веб-приложение:
+# Logging
+kubectl port-forward -n bank-app-dev svc/bank-app-kibana-kibana 5601:5601
+```
 
-1. Просматривать счета и балансы.
-2. Открывать новые счета (до 3 валют – RUB, USD, CNY).
-3. Вносить средства и снимать деньги (cash-service).
-4. Делать переводы между своими счетами и на счета других пользователей (transfer-service) с проверкой и подтверждением получателя.
-5. Смотреть курсы валют (exchange-service) и уведомления.
+Then open:
+- **Application UI**: http://localhost:8090
+- **API Gateway**: http://localhost:8100
+- **Zipkin (Tracing)**: http://localhost:9411
+- **Prometheus (Metrics)**: http://localhost:9090
+- **Grafana (Dashboards)**: http://localhost:3000
+  - Dev credentials: `admin` / `admin123`
+  - For production, use auto-generated password (see below)
+- **Kibana (Logs)**: http://localhost:5601
 
-## Примечания
+### Retrieving Auto-Generated Grafana Password
 
-- Профиль `docker` активируется автоматически в контейнерах.
-- Для локальной разработки вне docker используйте профиль `default` и свои настройки в `application.yml`.
-- Если появляются ошибки доступа к сервисам – убедитесь, что все контейнеры находятся в состоянии `healthy` (`docker compose ps`).
+For production environments, the password is auto-generated:
+
+```bash
+kubectl get secret bank-app-grafana -n bank-app-dev -o jsonpath='{.data.admin-password}' | base64 -d
+```
+
+## Microservices
+
+- **auth-server** - OAuth2 authentication
+- **gateway-service** - API Gateway
+- **accounts-service** - Account management
+- **cash-service** - Cash operations
+- **transfer-service** - Money transfers
+- **exchange-service** - Currency exchange
+- **exchange-generator-service** - Exchange rates generator
+- **blocker-service** - Fraud detection
+- **notifications-service** - Email/SMS notifications
+- **front-ui** - Web interface
+
+## Documentation
+
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Detailed deployment instructions for different environments
+- **[Jenkins Setup](docs/JENKINS_SETUP.md)** - CI/CD pipeline configuration and setup
+- **[Grafana Troubleshooting](docs/GRAFANA_TROUBLESHOOTING.md)** - Fix "No Data" issues and verify metrics collection
+- **[Minikube Troubleshooting](docs/MINIKUBE_TROUBLESHOOTING.md)** - Fix TLS timeouts and cluster connectivity issues
+- **[Pod Restart Fix](docs/POD_RESTART_FIX.md)** - Resolve constant pod restarts due to resource limits and probe issues
+
+## Monitoring & Logging
+
+### Distributed Tracing (Zipkin)
+- Trace requests across microservices
+- Performance analysis
+
+### Metrics (Prometheus + Grafana)
+- HTTP metrics (RPS, errors, latency)
+- JVM metrics (memory, GC, threads)
+- Business metrics (logins, transfers, blocks)
+
+### Centralized Logging (ELK)
+- Elasticsearch - Log storage
+- Logstash - Log processing
+- Kibana - Log visualization
+- Logs include trace IDs for correlation
+
+## Project Structure
+
+```
+.
+├── helm/
+│   ├── bank-app/           # Main application Helm chart
+│   ├── zipkin/             # Zipkin Helm chart
+│   ├── prometheus/         # Prometheus Helm chart
+│   ├── grafana/            # Grafana Helm chart
+│   └── elk/                # ELK Stack Helm charts
+├── monitoring/
+│   └── Jenkinsfile         # Monitoring deployment pipeline
+├── Jenkinsfile             # Main application pipeline
+├── minikube-setup.sh       # Local deployment script
+└── [microservices]/        # Individual service directories
+```
+
+## Commands Reference
+
+```bash
+# Minikube
+./minikube-setup.sh all          # Complete setup
+./minikube-setup.sh deploy       # Deploy app + monitoring + ELK
+./minikube-setup.sh status       # Check deployment status
+./minikube-setup.sh clean        # Remove all deployments
+
+# Kubernetes
+kubectl get pods -n bank-app-dev
+kubectl logs <pod> -n bank-app-dev
+kubectl describe pod <pod> -n bank-app-dev
+
+# Helm
+helm list -n bank-app-dev
+helm test bank-app -n bank-app-dev
+helm test bank-app-zipkin -n bank-app-dev
+helm test bank-app-prometheus -n bank-app-dev
+helm test bank-app-grafana -n bank-app-dev
+helm test bank-app-elasticsearch -n bank-app-dev
+helm test bank-app-logstash -n bank-app-dev
+helm test bank-app-kibana -n bank-app-dev
+```
+
+## Security Requirements
+
+### Grafana
+- **Development**: Uses fixed password `admin123` (local development only)
+- **Production**: Password must be set via environment variables or Kubernetes Secrets
+  ```bash
+  # Create secret for production
+  kubectl create secret generic grafana-admin-credentials \
+    --from-literal=admin-user=admin \
+    --from-literal=admin-password=$(openssl rand -base64 32) \
+    -n bank-app-prod
+  
+  # Update values.yaml to use the secret
+  # Uncomment the admin.existingSecret section
+  ```
+
+### OAuth2
+- Change client secrets before deploying to production
+- Use external identity provider (Keycloak, Auth0, etc.) for production
+

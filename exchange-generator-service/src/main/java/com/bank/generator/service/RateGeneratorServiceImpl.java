@@ -1,9 +1,10 @@
 package com.bank.generator.service;
 
-import com.bank.generator.client.ExchangeClient;
+import com.bank.common.metrics.CustomMetricsService;
+import com.bank.generator.kafka.ExchangeRateProducer;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -16,15 +17,13 @@ public class RateGeneratorServiceImpl extends AbstractRateGeneratorService {
 
     private final ThreadLocalRandom random = ThreadLocalRandom.current();
 
-    public RateGeneratorServiceImpl(ExchangeClient exchangeClient, DiscoveryClient discoveryClient) {
-        super(exchangeClient, discoveryClient);
+    public RateGeneratorServiceImpl(ExchangeRateProducer exchangeRateProducer, CustomMetricsService metricsService) {
+        super(exchangeRateProducer, metricsService);
     }
 
+    @Transactional
     @Override
     public void generateAndUpdateRates() {
-        if (!isTargetServiceAvailable()) {
-            return;
-        }
         double usdRate = random.nextDouble(70.0, 120.0);
         double cnyRate = random.nextDouble(8.0, 15.0);
 

@@ -1,6 +1,6 @@
 package com.bank.frontend.config;
 
-import com.bank.common.dto.contracts.auth.TokenResponse;
+import com.bank.common.auth.TokenResponse;
 import com.bank.frontend.service.AuthService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

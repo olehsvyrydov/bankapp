@@ -1,0 +1,11 @@
+apiVersion: v2
+name: bank-app-prometheus
+description: Prometheus metrics collection for Bank Application
+type: application
+version: 1.0.0
+appVersion: "v2.54.1"
+
+dependencies:
+  - name: prometheus
+    version: "25.27.0"
+    repository: https://prometheus-community.github.io/helm-charts

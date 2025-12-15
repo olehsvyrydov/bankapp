@@ -1,0 +1,77 @@
+Bank Application has been deployed!
+
+Release name: {{ .Release.Name }}
+Namespace: {{ .Values.global.namespace }}
+Environment: {{ .Values.global.environment }}
+
+To access the application:
+
+{{- if .Values.ingress.enabled }}
+
+1. Ingress is enabled. Add this entry to your /etc/hosts file:
+
+   {{- if eq .Values.ingress.className "nginx" }}
+   # For Minikube:
+   $(minikube ip) {{ .Values.ingress.host }}
+
+   # For Kind:
+   127.0.0.1 {{ .Values.ingress.host }}
+   {{- else }}
+   <cluster-ip> {{ .Values.ingress.host }}
+   {{- end }}
+
+2. Access the application at:
+   http://{{ .Values.ingress.host }}
+
+{{- else }}
+
+1. Port forward to the front-ui service:
+   kubectl port-forward -n {{ .Values.global.namespace }} svc/{{ .Release.Name }}-front-ui {{ index .Values "front-ui" "service" "port" }}:{{ index .Values "front-ui" "service" "port" }}
+
+2. Access the application at:
+   http://localhost:{{ index .Values "front-ui" "service" "port" }}
+
+{{- end }}
+
+Deployed services:
+{{- if .Values.postgresql.enabled }}
+  - PostgreSQL (database)
+{{- end }}
+{{- if index .Values "auth-server" "enabled" }}
+  - Auth Server (OAuth2) - Port {{ index .Values "auth-server" "service" "port" }}
+{{- end }}
+{{- if index .Values "accounts-service" "enabled" }}
+  - Accounts Service - Port {{ index .Values "accounts-service" "service" "port" }}
+{{- end }}
+{{- if index .Values "transfer-service" "enabled" }}
+  - Transfer Service - Port {{ index .Values "transfer-service" "service" "port" }}
+{{- end }}
+{{- if index .Values "cash-service" "enabled" }}
+  - Cash Service - Port {{ index .Values "cash-service" "service" "port" }}
+{{- end }}
+{{- if index .Values "exchange-service" "enabled" }}
+  - Exchange Service - Port {{ index .Values "exchange-service" "service" "port" }}
+{{- end }}
+{{- if index .Values "exchange-generator-service" "enabled" }}
+  - Exchange Generator Service - Port {{ index .Values "exchange-generator-service" "service" "port" }}
+{{- end }}
+{{- if index .Values "notifications-service" "enabled" }}
+  - Notifications Service - Port {{ index .Values "notifications-service" "service" "port" }}
+{{- end }}
+{{- if index .Values "blocker-service" "enabled" }}
+  - Blocker Service - Port {{ index .Values "blocker-service" "service" "port" }}
+{{- end }}
+{{- if index .Values "gateway-service" "enabled" }}
+  - Gateway Service - Port {{ index .Values "gateway-service" "service" "port" }}
+{{- end }}
+{{- if index .Values "front-ui" "enabled" }}
+  - Front UI - Port {{ index .Values "front-ui" "service" "port" }}
+{{- end }}
+
+To check the status of your deployment:
+  kubectl get pods -n {{ .Values.global.namespace }}
+
+To view logs of a specific service:
+  kubectl logs -n {{ .Values.global.namespace }} -l app.kubernetes.io/name=<service-name>
+
+Happy banking!

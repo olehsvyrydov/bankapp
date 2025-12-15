@@ -1,0 +1,12 @@
+apiVersion: v2
+name: cash-service
+description: cash-service for Bank application
+type: application
+version: 1.0.0
+appVersion: "2.0.0"
+keywords:
+  - bank
+  - microservice
+  - spring-boot
+maintainers:
+  - name: Bank App Team

@@ -26,12 +26,6 @@ public class ExchangeController {
         return ResponseEntity.ok(ApiResponse.success(rates));
     }
 
-    @PostMapping("/rates")
-    public ResponseEntity<ApiResponse<Void>> updateRate(@RequestBody ExchangeRateDTO rate) {
-        exchangeService.updateRate(rate.getCurrency(), rate.getBuyRate(), rate.getSellRate());
-        return ResponseEntity.ok(ApiResponse.success(null, "Rate updated"));
-    }
-
     @PostMapping("/convert")
     public ResponseEntity<ApiResponse<BigDecimal>> convert(@RequestBody ConversionRequest request) {
         BigDecimal result = exchangeService.convert(

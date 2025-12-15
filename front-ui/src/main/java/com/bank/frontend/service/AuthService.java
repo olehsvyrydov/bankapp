@@ -2,7 +2,7 @@ package com.bank.frontend.service;
 
 import com.bank.common.dto.ApiResponse;
 import com.bank.common.dto.contracts.accounts.ChangePasswordRequest;
-import com.bank.common.dto.contracts.auth.*;
+import com.bank.common.auth.*;
 import com.bank.common.exception.BusinessException;
 import com.bank.frontend.client.AuthServiceClient;
 import jakarta.validation.Valid;

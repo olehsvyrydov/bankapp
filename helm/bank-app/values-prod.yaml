@@ -1,0 +1,59 @@
+# Production environment values
+global:
+  namespace: bank-app-prod
+  environment: prod
+
+  image:
+    pullPolicy: IfNotPresent
+    tag: "2.0.0"  # Use specific version tags in production
+
+  resources:
+    limits:
+      memory: 2Gi
+      cpu: 2000m
+    requests:
+      memory: 1Gi
+      cpu: 1000m
+
+# Production-specific PostgreSQL settings
+postgresql:
+  storageSize: 50Gi
+  storageClass: standard
+
+# Multiple replicas for high availability in production
+auth-server:
+  replicaCount: 2
+
+accounts-service:
+  replicaCount: 2
+
+transfer-service:
+  replicaCount: 2
+
+cash-service:
+  replicaCount: 2
+
+exchange-service:
+  replicaCount: 2
+
+exchange-generator-service:
+  replicaCount: 1  # Only one generator needed
+
+notifications-service:
+  replicaCount: 2
+
+blocker-service:
+  replicaCount: 2
+
+gateway-service:
+  replicaCount: 2
+
+front-ui:
+  replicaCount: 2
+
+# Ingress for production
+ingress:
+  enabled: true
+  host: bank-app.local
+  tls:
+    enabled: false  # Enable with proper certificates in real production

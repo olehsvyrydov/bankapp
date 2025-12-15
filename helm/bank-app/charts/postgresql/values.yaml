@@ -1,0 +1,41 @@
+## PostgreSQL subchart default values
+
+image:
+  repository: postgres
+  tag: "14-alpine"
+  pullPolicy: IfNotPresent
+
+storageClass: standard
+storageSize: 10Gi
+
+database: bankdb
+username: bank_user
+password: bank_password
+
+# Schemas to create
+schemas:
+  - auth
+  - accounts
+  - transfer
+  - cash
+  - exchange
+  - notifications
+
+service:
+  type: ClusterIP
+  port: 5432
+
+resources:
+  limits:
+    memory: 1Gi
+    cpu: 1000m
+  requests:
+    memory: 512Mi
+    cpu: 500m
+
+## Persistence configuration
+persistence:
+  enabled: true
+  storageClass: standard
+  accessMode: ReadWriteOnce
+  size: 10Gi

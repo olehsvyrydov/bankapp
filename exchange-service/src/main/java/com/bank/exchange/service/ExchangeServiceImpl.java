@@ -4,6 +4,7 @@ import com.bank.common.dto.contracts.exchange.ExchangeRateDTO;
 import com.bank.exchange.entity.ExchangeRate;
 import com.bank.exchange.repository.ExchangeRateRepository;
 import com.bank.common.exception.BusinessException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +14,7 @@ import java.math.RoundingMode;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 public class ExchangeServiceImpl implements ExchangeService {
@@ -39,9 +41,15 @@ public class ExchangeServiceImpl implements ExchangeService {
         ExchangeRate rate = exchangeRateRepository.findByCurrency(currency)
             .orElse(ExchangeRate.builder().currency(currency).build());
 
+        BigDecimal oldBuyRate = rate.getBuyRate();
+        BigDecimal oldSellRate = rate.getSellRate();
+
         rate.setBuyRate(buyRate);
         rate.setSellRate(sellRate);
-        exchangeRateRepository.save(rate);
+        ExchangeRate savedRate = exchangeRateRepository.save(rate);
+
+        log.debug("Exchange rate updated in DB - Currency: {}, Old: [buy={}, sell={}], New: [buy={}, sell={}], DB ID: {}",
+            currency, oldBuyRate, oldSellRate, savedRate.getBuyRate(), savedRate.getSellRate(), savedRate.getId());
     }
 
     @Override

@@ -1,8 +1,8 @@
 package com.bank.auth.controller;
 
-import com.bank.auth.client.NotificationClient;
+import com.bank.auth.kafka.NotificationProducer;
 import com.bank.common.dto.contracts.accounts.ChangePasswordRequest;
-import com.bank.common.dto.contracts.auth.UserRegistrationRequest;
+import com.bank.common.auth.UserRegistrationRequest;
 import com.bank.auth.service.UserService;
 import com.bank.common.dto.contracts.notifications.NotificationRequest;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +20,7 @@ import java.util.Map;
 public class UserController
 {
     private final UserService userService;
-    private final NotificationClient notificationClient;
+    private final NotificationProducer notificationProducer;
 
 
     @PostMapping("/register")
@@ -63,7 +63,7 @@ public class UserController
                     .body(Map.of("error", "Cannot change password for another user"));
             }
             userService.changePassword(username, request.getNewPassword());
-            notificationClient.sendNotification(NotificationRequest.builder()
+            notificationProducer.sendNotification(NotificationRequest.builder()
                 .username(username)
                 .message("&#x2714; Your password has been changed successfully.")
                 .type("INFO")

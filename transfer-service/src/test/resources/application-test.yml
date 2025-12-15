@@ -11,16 +11,11 @@ spring:
   flyway:
     enabled: false
     locations: classpath:db/migration
-  cloud:
-    discovery:
-      enabled: false
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: http://localhost
-eureka:
-  client:
-    enabled: false
+
 spring.cloud.openfeign.circuitbreaker.enabled: false
 logging.level.org.springframework: WARN

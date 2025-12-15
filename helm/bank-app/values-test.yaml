@@ -1,0 +1,56 @@
+# Test environment values
+global:
+  namespace: bank-app-test
+  environment: test
+
+  image:
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  resources:
+    limits:
+      memory: 1Gi
+      cpu: 1000m
+    requests:
+      memory: 512Mi
+      cpu: 500m
+
+# Test-specific PostgreSQL settings
+postgresql:
+  storageSize: 10Gi
+
+# Single replica for most services in test
+auth-server:
+  replicaCount: 1
+
+accounts-service:
+  replicaCount: 1
+
+transfer-service:
+  replicaCount: 1
+
+cash-service:
+  replicaCount: 1
+
+exchange-service:
+  replicaCount: 1
+
+exchange-generator-service:
+  replicaCount: 1
+
+notifications-service:
+  replicaCount: 1
+
+blocker-service:
+  replicaCount: 1
+
+gateway-service:
+  replicaCount: 1
+
+front-ui:
+  replicaCount: 1
+
+# Ingress for test
+ingress:
+  enabled: true
+  host: bank-app-test.local

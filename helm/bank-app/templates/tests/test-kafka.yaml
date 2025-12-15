@@ -1,0 +1,120 @@
+{{- if .Values.customKafka.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "bank-app.fullname" . }}-test-kafka"
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "bank-app.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  restartPolicy: Never
+  containers:
+    - name: kafka-test
+      image: "{{ .Values.customKafka.image.registry }}/{{ .Values.customKafka.image.repository }}:{{ .Values.customKafka.image.tag }}"
+      imagePullPolicy: {{ .Values.customKafka.image.pullPolicy }}
+      command: ['sh', '-c']
+      env:
+        - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+          value: "{{ .Values.global.kafka.bootstrapServers }}"
+      args:
+        - |
+          set -e
+          echo "Testing Kafka deployment..."
+          echo "Bootstrap servers: $SPRING_KAFKA_BOOTSTRAP_SERVERS"
+
+          # Wait for Kafka to be ready
+          echo "Waiting for Kafka to be ready..."
+          max_attempts=30
+          attempt=0
+          while [ $attempt -lt $max_attempts ]; do
+            if /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server $SPRING_KAFKA_BOOTSTRAP_SERVERS 2>/dev/null; then
+              echo "Kafka is ready!"
+              break
+            fi
+            attempt=$((attempt + 1))
+            echo "Attempt $attempt/$max_attempts - Kafka not ready yet, waiting..."
+            sleep 2
+          done
+
+          if [ $attempt -eq $max_attempts ]; then
+            echo "ERROR: Kafka did not become ready in time"
+            exit 1
+          fi
+
+          # List broker information
+          echo ""
+          echo "=== Kafka Broker Information ==="
+          /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server $SPRING_KAFKA_BOOTSTRAP_SERVERS || exit 1
+
+          # List topics
+          echo ""
+          echo "=== Kafka Topics ==="
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server $SPRING_KAFKA_BOOTSTRAP_SERVERS --list || exit 1
+
+          # Verify expected topics exist
+          echo ""
+          echo "=== Verifying Expected Topics ==="
+          EXPECTED_TOPICS="bank.notifications bank.exchange.rates"
+
+          for topic in $EXPECTED_TOPICS; do
+            echo "Checking topic: $topic"
+            if /opt/kafka/bin/kafka-topics.sh --bootstrap-server $SPRING_KAFKA_BOOTSTRAP_SERVERS --list | grep -q "^$topic$"; then
+              echo "✓ Topic '$topic' exists"
+
+              # Describe topic
+              echo "Topic details:"
+              /opt/kafka/bin/kafka-topics.sh --bootstrap-server $SPRING_KAFKA_BOOTSTRAP_SERVERS --describe --topic $topic
+            else
+              echo "✗ ERROR: Topic '$topic' not found!"
+              exit 1
+            fi
+            echo ""
+          done
+
+          # Test producer/consumer
+          echo "=== Testing Kafka Producer/Consumer ==="
+          TEST_TOPIC="test-helm-validation"
+          TEST_MESSAGE="Hello from Helm test at $(date)"
+
+          # Create test topic
+          echo "Creating test topic: $TEST_TOPIC"
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server $SPRING_KAFKA_BOOTSTRAP_SERVERS \
+            --create --topic $TEST_TOPIC \
+            --partitions 1 --replication-factor 1 \
+            --if-not-exists || exit 1
+
+          # Produce a test message
+          echo "Producing test message..."
+          echo "$TEST_MESSAGE" | /opt/kafka/bin/kafka-console-producer.sh \
+            --bootstrap-server $SPRING_KAFKA_BOOTSTRAP_SERVERS \
+            --topic $TEST_TOPIC || exit 1
+
+          # Consume the test message
+          echo "Consuming test message..."
+          CONSUMED=$(/opt/kafka/bin/kafka-console-consumer.sh \
+            --bootstrap-server $SPRING_KAFKA_BOOTSTRAP_SERVERS \
+            --topic $TEST_TOPIC \
+            --from-beginning \
+            --max-messages 1 \
+            --timeout-ms 10000 2>/dev/null)
+
+          if [ "$CONSUMED" = "$TEST_MESSAGE" ]; then
+            echo "✓ Successfully produced and consumed test message"
+          else
+            echo "✗ ERROR: Message mismatch!"
+            echo "Expected: $TEST_MESSAGE"
+            echo "Got: $CONSUMED"
+            exit 1
+          fi
+
+          # Clean up test topic
+          echo "Cleaning up test topic..."
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server $SPRING_KAFKA_BOOTSTRAP_SERVERS \
+            --delete --topic $TEST_TOPIC || echo "Warning: Could not delete test topic"
+
+          echo ""
+          echo "=== All Kafka tests passed! ==="
+{{- end }}

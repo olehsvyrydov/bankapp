@@ -1,3 +1,33 @@
+# IDE files
 .idea
-**/target
 **/*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Build artifacts
+**/target
+*.jar
+*.war
+*.ear
+*.class
+
+# Maven
+.m2/repository/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Helm build artifacts
+**/Chart.lock
+**/charts/*.tgz
+
+# Temporary files
+*.tmp
+*.swp
+*~
