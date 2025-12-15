@@ -33,6 +33,10 @@ data:
   # Logging
   LOGGING_LEVEL_ROOT: "INFO"
   LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: "INFO"
+
+  # Kafka configuration for logging
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "{{ .Values.global.kafka.bootstrapServers }}"
+
   SPRING_CLOUD_KUBERNETES_LOADBALANCER_MODE: {{ default "SERVICE" .Values.global.loadBalancer.mode | quote }}
   CLIENTS_GATEWAY_SERVICE_ID: {{ (.Values.global.services.gateway.name | default "bank-app-gateway-service.bank-app-dev") | quote }}
   CLIENTS_AUTH_SERVICE_ID: {{ (.Values.global.services.auth.name | default "bank-app-auth-server.bank-app-dev") | quote }}

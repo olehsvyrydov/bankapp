@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: gateway-service
+  profiles:
+    include: tracing,metrics
   security:
     oauth2:
       client:

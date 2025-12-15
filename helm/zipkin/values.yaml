@@ -1,0 +1,57 @@
+# Default values for bank-app-zipkin
+# This is a wrapper chart for the official Zipkin Helm chart
+
+zipkin:
+  # Number of replicas
+  replicaCount: 1
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 9411
+
+  # Storage configuration
+  # Using in-memory storage for dev environment
+  # For production, consider using Elasticsearch or MySQL/PostgreSQL
+  storage:
+    type: mem
+    # Uncomment below for PostgreSQL storage
+    # type: postgresql
+    # postgresql:
+    #   host: bank-app-postgresql
+    #   port: 5432
+    #   username: zipkin
+    #   password: zipkin
+    #   database: zipkin
+
+  # Resource limits for dev environment
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  # Environment variables
+  env:
+    - name: STORAGE_TYPE
+      value: "mem"
+    # Uncomment for query optimization
+    # - name: QUERY_LOOKBACK
+    #   value: "86400000"  # 24 hours in milliseconds
+
+  # Probes
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 9411
+    initialDelaySeconds: 30
+    periodSeconds: 10
+
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 9411
+    initialDelaySeconds: 20
+    periodSeconds: 5

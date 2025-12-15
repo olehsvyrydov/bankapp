@@ -8,6 +8,7 @@ import com.bank.common.dto.contracts.exchange.ConversionRequest;
 import com.bank.common.dto.contracts.notifications.NotificationRequest;
 import com.bank.common.dto.contracts.transfer.TransferRequest;
 import com.bank.common.dto.contracts.transfer.TransferResponse;
+import com.bank.common.metrics.CustomMetricsService;
 import com.bank.transfer.client.*;
 import com.bank.transfer.kafka.NotificationProducer;
 import com.bank.transfer.entity.Transfer;
@@ -36,18 +37,21 @@ public class TransferServiceImpl implements TransferService {
     private final ExchangeClient exchangeClient;
     private final BlockerClient blockerClient;
     private final NotificationProducer notificationProducer;
+    private final CustomMetricsService metricsService;
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public TransferServiceImpl(TransferRepository transferRepository,
         AccountsClient accountsClient,
         ExchangeClient exchangeClient,
         BlockerClient blockerClient,
-        NotificationProducer notificationProducer) {
+        NotificationProducer notificationProducer,
+        CustomMetricsService metricsService) {
         this.transferRepository = transferRepository;
         this.accountsClient = accountsClient;
         this.exchangeClient = exchangeClient;
         this.blockerClient = blockerClient;
         this.notificationProducer = notificationProducer;
+        this.metricsService = metricsService;
     }
 
     @Override
@@ -81,6 +85,10 @@ public class TransferServiceImpl implements TransferService {
 
             // Check balance
             if (fromBalance.compareTo(request.getAmount()) < 0) {
+                metricsService.recordFailedTransfer(
+                    request.getFromBankAccountId().toString(),
+                    request.getToBankAccountId() != null ? request.getToBankAccountId().toString() : "email",
+                    "insufficient_funds");
                 throw new BusinessException("Insufficient balance");
             }
 
@@ -181,6 +189,10 @@ public class TransferServiceImpl implements TransferService {
                     log.info("Currency converted: {} {} -> {} {}", request.getAmount(), fromCurrency,
                         convertedAmount, toCurrency);
                 } else {
+                    metricsService.recordFailedTransfer(
+                        request.getFromBankAccountId().toString(),
+                        request.getToBankAccountId().toString(),
+                        "conversion_failed");
                     throw new BusinessException("Currency conversion failed: " + resp.getMessage());
                 }
             } else {
@@ -240,11 +252,19 @@ public class TransferServiceImpl implements TransferService {
                 .convertedAmount(convertedAmount)
                 .build();
         } catch (FeignException ex) {
+            metricsService.recordFailedTransfer(
+                request.getFromBankAccountId().toString(),
+                request.getToBankAccountId() != null ? request.getToBankAccountId().toString() : "unknown",
+                "service_error");
             throw new BusinessException(resolveFeignMessage("Accounts service error", ex));
         } catch (BusinessException ex) {
             throw ex;
         } catch (Exception ex) {
             log.error("Unexpected transfer failure", ex);
+            metricsService.recordFailedTransfer(
+                request.getFromBankAccountId().toString(),
+                request.getToBankAccountId() != null ? request.getToBankAccountId().toString() : "unknown",
+                "unexpected_error");
             throw new BusinessException("Transfer failed: " + ex.getMessage());
         }
     }

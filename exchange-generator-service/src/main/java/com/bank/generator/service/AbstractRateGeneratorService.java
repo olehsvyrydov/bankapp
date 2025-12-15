@@ -1,6 +1,7 @@
 package com.bank.generator.service;
 
 import com.bank.common.dto.contracts.exchange.ExchangeRateDTO;
+import com.bank.common.metrics.CustomMetricsService;
 import com.bank.generator.kafka.ExchangeRateProducer;
 import lombok.extern.slf4j.Slf4j;
 
@@ -10,9 +11,11 @@ import java.math.BigDecimal;
 public abstract class AbstractRateGeneratorService implements RateGeneratorService
 {
     protected final ExchangeRateProducer exchangeRateProducer;
+    protected final CustomMetricsService metricsService;
 
-    protected AbstractRateGeneratorService(ExchangeRateProducer exchangeRateProducer) {
+    protected AbstractRateGeneratorService(ExchangeRateProducer exchangeRateProducer, CustomMetricsService metricsService) {
         this.exchangeRateProducer = exchangeRateProducer;
+        this.metricsService = metricsService;
     }
 
     protected void updateRate(String currency, BigDecimal buyRate, BigDecimal sellRate) {
@@ -24,9 +27,11 @@ public abstract class AbstractRateGeneratorService implements RateGeneratorServi
                 .build();
 
             exchangeRateProducer.sendExchangeRate(request);
+            metricsService.recordExchangeRateUpdate();
             log.debug("Published exchange rate update via Kafka: {} buy={} sell={}", currency, buyRate, sellRate);
         } catch (Exception e) {
             log.error("Unexpected error updating rate for {}: {}", currency, e.getMessage(), e);
+            metricsService.recordExchangeRateUpdateFailure();
         }
     }
 }

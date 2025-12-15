@@ -43,6 +43,9 @@
         <resilience4j.version>2.2.0</resilience4j.version>
         <testcontainers.version>1.21.3</testcontainers.version>
         <kafka.version>3.9.0</kafka.version>
+        <micrometer-tracing.version>1.4.1</micrometer-tracing.version>
+        <brave.version>6.0.3</brave.version>
+        <zipkin-reporter.version>3.4.2</zipkin-reporter.version>
     </properties>
 
     <dependencyManagement>
@@ -132,6 +135,41 @@
                 <version>${testcontainers.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <!-- Micrometer Tracing -->
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-tracing-bom</artifactId>
+                <version>${micrometer-tracing.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-tracing-bridge-brave</artifactId>
+                <version>${micrometer-tracing.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.zipkin.reporter2</groupId>
+                <artifactId>zipkin-reporter-brave</artifactId>
+                <version>${zipkin-reporter.version}</version>
+            </dependency>
+
+            <!-- Logstash Logback Encoder for structured logging -->
+            <dependency>
+                <groupId>net.logstash.logback</groupId>
+                <artifactId>logstash-logback-encoder</artifactId>
+                <version>8.0</version>
+            </dependency>
+
+            <!-- Logback Kafka Appender -->
+            <dependency>
+                <groupId>com.github.danielwegener</groupId>
+                <artifactId>logback-kafka-appender</artifactId>
+                <version>0.2.0-RC2</version>
             </dependency>
 
             <!-- Flyway -->
