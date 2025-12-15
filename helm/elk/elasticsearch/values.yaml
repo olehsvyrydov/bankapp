@@ -1,0 +1,113 @@
+# Default values for bank-app-elasticsearch
+# This is a wrapper chart for the official Elasticsearch Helm chart
+
+elasticsearch:
+  # Cluster configuration
+  clusterName: "bank-app-elasticsearch"
+
+  # Single node for dev environment
+  # For production, use 3+ nodes
+  replicas: 1
+  minimumMasterNodes: 1
+
+  # Resources
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+
+  # JVM heap size (should be ~50% of memory limit)
+  esJavaOpts: "-Xmx512m -Xms512m"
+
+  # Volume for data persistence
+  # Using emptyDir for dev, PVC for production
+  persistence:
+    enabled: false
+    # Uncomment for production
+    # enabled: true
+    # size: 30Gi
+    # storageClass: standard
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 9200
+
+  # Security - disabled for dev, enable for production
+  # For Elasticsearch 8.x, security is enabled by default
+  # We disable it for dev simplicity
+  secret:
+    enabled: false
+
+  # Elasticsearch configuration
+  esConfig:
+    elasticsearch.yml: |
+      # Network configuration
+      network.host: 0.0.0.0
+      # Disable security for dev environment
+      xpack.security.enabled: false
+      xpack.security.enrollment.enabled: false
+      # Explicitly disable HTTP SSL
+      xpack.security.http.ssl.enabled: false
+      xpack.security.transport.ssl.enabled: false
+      # Index lifecycle management
+      indices.lifecycle.poll_interval: "1m"
+      # Disable disk watermarks for dev environment
+      cluster.routing.allocation.disk.threshold_enabled: false
+      # Disable GeoIP downloader (not needed for dev)
+      ingest.geoip.downloader.enabled: false
+      # For production, uncomment:
+      # xpack.security.enabled: true
+      # xpack.security.transport.ssl.enabled: true
+      # xpack.security.http.ssl.enabled: true
+
+  # Probes
+  # Custom readiness probe for HTTP (security disabled)
+  readinessProbe:
+    exec:
+      command:
+        - sh
+        - -c
+        - |
+          #!/usr/bin/env bash
+          set -e
+          # Use HTTP instead of HTTPS since security is disabled
+          curl -f http://localhost:9200/_cluster/health
+    failureThreshold: 3
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 10
+
+  # Anti-affinity for production (disabled for dev)
+  antiAffinity: "soft"
+  # For production use "hard"
+
+  # Note: ILM policy will be created via Logstash or manually after ES starts
+  # Removing init container to avoid circular dependency
+
+  # Environment variables
+  # ES 8.x requires ELASTIC_PASSWORD even when security is disabled
+  # Also disable security autoconfiguration
+  extraEnvs:
+    - name: ELASTIC_PASSWORD
+      value: "changeme"
+    - name: xpack.security.enabled
+      value: "false"
+    - name: xpack.security.enrollment.enabled
+      value: "false"
+    - name: xpack.security.http.ssl.enabled
+      value: "false"
+    - name: xpack.security.transport.ssl.enabled
+      value: "false"
+
+  # System calls filter - may need to be disabled on some systems
+  sysctlInitContainer:
+    enabled: true
+
+  # Disable subchart tests (we have our own test-connection.yaml)
+  tests:
+    enabled: false

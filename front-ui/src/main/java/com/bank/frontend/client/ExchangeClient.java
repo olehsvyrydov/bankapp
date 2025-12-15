@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import java.util.List;
 
-@FeignClient(name = "${clients.gateway.service-id:bank-app-gateway-service}", contextId = "exchangeClient")
+@FeignClient(name = "${clients.exchange.service-id:bank-app-exchange-service}", contextId = "exchangeClient")
 public interface ExchangeClient {
 
     @GetMapping("/api/exchange/rates")

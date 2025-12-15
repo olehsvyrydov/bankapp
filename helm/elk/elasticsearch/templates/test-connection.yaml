@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ .Release.Name }}-test-connection"
+  labels:
+    {{- include "elasticsearch.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  containers:
+    - name: test-elasticsearch
+      image: curlimages/curl:8.1.2
+      command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          echo "Testing Elasticsearch connection..."
+
+          # Wait for Elasticsearch to be ready
+          # Note: The subchart creates service as {{ .Release.Name }}-master
+          MAX_RETRIES=30
+          RETRY_COUNT=0
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if curl -sf http://{{ .Release.Name }}-master:9200/_cluster/health; then
+              echo "✓ Elasticsearch is accessible"
+              break
+            fi
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            echo "Waiting for Elasticsearch... ($RETRY_COUNT/$MAX_RETRIES)"
+            sleep 2
+          done
+
+          if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+            echo "✗ Failed to connect to Elasticsearch after $MAX_RETRIES attempts"
+            exit 1
+          fi
+
+          # Check cluster health
+          HEALTH=$(curl -s http://{{ .Release.Name }}-master:9200/_cluster/health | grep -Eo '"status"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d'"' -f4)
+          echo "Cluster health: $HEALTH"
+
+          if [ "$HEALTH" = "green" ] || [ "$HEALTH" = "yellow" ]; then
+            echo "✓ Elasticsearch cluster is healthy"
+          else
+            echo "✗ Elasticsearch cluster is not healthy: $HEALTH"
+            exit 1
+          fi
+
+          # Verify nodes
+          NODES=$(curl -s http://{{ .Release.Name }}-master:9200/_cat/nodes?h=name | wc -l)
+          echo "✓ Elasticsearch has $NODES node(s)"
+
+          echo "✓ All Elasticsearch tests passed!"
+  restartPolicy: Never

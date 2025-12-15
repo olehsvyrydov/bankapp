@@ -34,7 +34,7 @@ public class ExchangeRatesController {
      *
      * @return response entity with list of exchange rates or error
      */
-    @GetMapping("/exchange-rates")
+    @GetMapping("/exchange/rates")
     public ResponseEntity<?> getExchangeRates() {
         log.debug("Fetching exchange rates");
 

@@ -25,6 +25,7 @@ public class SecurityConfig {
             .addFilterBefore(tokenRefreshFilter, SessionAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/**").permitAll()
+                .requestMatchers("/api/exchange/rates").permitAll()
                 .requestMatchers("/", "/login", "/perform-login",
                     "/register", "/perform-register",
                     "/css/**", "/js/**", "/images/**",

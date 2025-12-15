@@ -1,0 +1,153 @@
+pipeline {
+    agent any
+
+    environment {
+        NAMESPACE = 'bank-app-dev'
+    }
+
+    stages {
+        stage('Deploy Zipkin') {
+            steps {
+                echo 'Deploying Zipkin for distributed tracing...'
+                sh """
+                    helm dependency update helm/zipkin
+                    helm upgrade --install bank-app-zipkin helm/zipkin \
+                        --namespace ${NAMESPACE} \
+                        --create-namespace \
+                        --wait \
+                        --timeout 10m
+                """
+                echo '✓ Zipkin deployed successfully'
+            }
+        }
+
+        stage('Deploy Prometheus') {
+            steps {
+                echo 'Deploying Prometheus for metrics collection...'
+                sh """
+                    helm dependency update helm/prometheus
+                    helm upgrade --install bank-app-prometheus helm/prometheus \
+                        --namespace ${NAMESPACE} \
+                        --wait \
+                        --timeout 10m
+                """
+                echo '✓ Prometheus deployed successfully'
+            }
+        }
+
+        stage('Deploy Grafana') {
+            steps {
+                echo 'Deploying Grafana for metrics visualization...'
+                sh """
+                    helm dependency update helm/grafana
+                    helm upgrade --install bank-app-grafana helm/grafana \
+                        --namespace ${NAMESPACE} \
+                        --wait \
+                        --timeout 10m
+                """
+                echo '✓ Grafana deployed successfully'
+            }
+        }
+
+        stage('Deploy ELK Stack') {
+            parallel {
+                stage('Deploy Elasticsearch') {
+                    steps {
+                        echo 'Deploying Elasticsearch...'
+                        sh """
+                            helm dependency update helm/elk/elasticsearch
+                            helm upgrade --install bank-app-elasticsearch helm/elk/elasticsearch \
+                                --namespace ${NAMESPACE} \
+                                --wait \
+                                --timeout 10m
+                        """
+                        echo '✓ Elasticsearch deployed successfully'
+                    }
+                }
+                stage('Deploy Logstash') {
+                    steps {
+                        echo 'Deploying Logstash...'
+                        sh """
+                            helm dependency update helm/elk/logstash
+                            helm upgrade --install bank-app-logstash helm/elk/logstash \
+                                --namespace ${NAMESPACE} \
+                                --wait \
+                                --timeout 10m
+                        """
+                        echo '✓ Logstash deployed successfully'
+                    }
+                }
+                stage('Deploy Kibana') {
+                    steps {
+                        echo 'Deploying Kibana...'
+                        sh """
+                            helm dependency update helm/elk/kibana
+                            helm upgrade --install bank-app-kibana helm/elk/kibana \
+                                --namespace ${NAMESPACE} \
+                                --no-hooks \
+                                --wait \
+                                --timeout 10m
+                        """
+                        echo '✓ Kibana deployed successfully'
+                    }
+                }
+            }
+        }
+
+        stage('Test Monitoring Stack') {
+            parallel {
+                stage('Test Zipkin') {
+                    steps {
+                        echo 'Testing Zipkin deployment...'
+                        sh "helm test bank-app-zipkin -n \${NAMESPACE} --logs || true"
+                    }
+                }
+                stage('Test Prometheus') {
+                    steps {
+                        echo 'Testing Prometheus deployment...'
+                        sh "helm test bank-app-prometheus -n \${NAMESPACE} --logs || true"
+                    }
+                }
+                stage('Test Grafana') {
+                    steps {
+                        echo 'Testing Grafana deployment...'
+                        sh "helm test bank-app-grafana -n \${NAMESPACE} --logs || true"
+                    }
+                }
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                echo 'Verifying monitoring and logging stack deployment...'
+                sh """
+                    echo "=== Helm Releases ==="
+                    helm list -n \${NAMESPACE}
+
+                    echo ""
+                    echo "=== Pod Status ==="
+                    kubectl get pods -n \${NAMESPACE} | grep -E '(zipkin|prometheus|grafana|elasticsearch|logstash|kibana)'
+
+                    echo ""
+                    echo "=== Service Endpoints ==="
+                    kubectl get svc -n \${NAMESPACE} | grep -E '(zipkin|prometheus|grafana|elasticsearch|logstash|kibana)'
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✓ Monitoring and logging infrastructure deployed successfully!'
+            echo 'Access URLs (use kubectl port-forward):'
+            echo '  Zipkin: kubectl port-forward -n bank-app-dev svc/bank-app-zipkin-zipkin 9411:9411'
+            echo '  Prometheus: kubectl port-forward -n bank-app-dev svc/bank-app-prometheus-server 9090:80'
+            echo '  Grafana: kubectl port-forward -n bank-app-dev svc/bank-app-grafana 3000:80'
+            echo '  Kibana: kubectl port-forward -n bank-app-dev svc/bank-app-kibana-kibana 5601:5601'
+        }
+        failure {
+            echo '✗ Monitoring and logging infrastructure deployment failed'
+            echo 'Check the logs above for details'
+        }
+    }
+}

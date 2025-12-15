@@ -1,0 +1,147 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "bank-app.fullname" . }}-test
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "bank-app.labels" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "bank-app.fullname" . }}-test
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "bank-app.labels" . | nindent 4 }}
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "secrets", "services", "pods"]
+  verbs: ["get", "list"]
+- apiGroups: ["apps"]
+  resources: ["statefulsets", "deployments"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "bank-app.fullname" . }}-test
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "bank-app.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "bank-app.fullname" . }}-test
+subjects:
+- kind: ServiceAccount
+  name: {{ include "bank-app.fullname" . }}-test
+  namespace: {{ .Values.global.namespace }}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "bank-app.fullname" . }}-test-rbac"
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "bank-app.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  serviceAccountName: {{ include "bank-app.fullname" . }}-test
+  restartPolicy: Never
+  containers:
+    - name: rbac-test
+      image: bitnami/kubectl:latest
+      imagePullPolicy: IfNotPresent
+      command: ['sh', '-c']
+      args:
+        - |
+          set -e
+          echo "Testing RBAC permissions..."
+          echo ""
+
+          # Test 1: Verify we can list ConfigMaps (should succeed)
+          echo "=== Test 1: List ConfigMaps ==="
+          if kubectl get configmaps -n {{ .Values.global.namespace }} > /dev/null 2>&1; then
+            echo "✓ Successfully listed ConfigMaps"
+          else
+            echo "✗ ERROR: Failed to list ConfigMaps"
+            exit 1
+          fi
+          echo ""
+
+          # Test 2: Verify we can list Secrets (should succeed)
+          echo "=== Test 2: List Secrets ==="
+          if kubectl get secrets -n {{ .Values.global.namespace }} > /dev/null 2>&1; then
+            echo "✓ Successfully listed Secrets"
+          else
+            echo "✗ ERROR: Failed to list Secrets"
+            exit 1
+          fi
+          echo ""
+
+          # Test 3: Verify we can list Services (should succeed)
+          echo "=== Test 3: List Services ==="
+          if kubectl get services -n {{ .Values.global.namespace }} > /dev/null 2>&1; then
+            echo "✓ Successfully listed Services"
+          else
+            echo "✗ ERROR: Failed to list Services"
+            exit 1
+          fi
+          echo ""
+
+          # Test 4: Verify we can list Pods (should succeed)
+          echo "=== Test 4: List Pods ==="
+          if kubectl get pods -n {{ .Values.global.namespace }} > /dev/null 2>&1; then
+            echo "✓ Successfully listed Pods"
+          else
+            echo "✗ ERROR: Failed to list Pods"
+            exit 1
+          fi
+          echo ""
+
+          # Test 5: Verify we can list StatefulSets (should succeed)
+          echo "=== Test 5: List StatefulSets ==="
+          if kubectl get statefulsets -n {{ .Values.global.namespace }} > /dev/null 2>&1; then
+            echo "✓ Successfully listed StatefulSets"
+          else
+            echo "✗ ERROR: Failed to list StatefulSets"
+            exit 1
+          fi
+          echo ""
+
+          # Test 6: Verify we can list Deployments (should succeed)
+          echo "=== Test 6: List Deployments ==="
+          if kubectl get deployments -n {{ .Values.global.namespace }} > /dev/null 2>&1; then
+            echo "✓ Successfully listed Deployments"
+          else
+            echo "✗ ERROR: Failed to list Deployments"
+            exit 1
+          fi
+          echo ""
+
+          # Test 7: Verify we CANNOT create ConfigMaps (should fail - only get/list allowed)
+          echo "=== Test 7: Verify Limited Permissions (Create ConfigMap should fail) ==="
+          if kubectl create configmap test-forbidden -n {{ .Values.global.namespace }} --from-literal=key=value > /dev/null 2>&1; then
+            echo "✗ ERROR: Should not be able to create ConfigMaps"
+            kubectl delete configmap test-forbidden -n {{ .Values.global.namespace }} 2>/dev/null || true
+            exit 1
+          else
+            echo "✓ Correctly prevented from creating ConfigMaps (permissions properly restricted)"
+          fi
+          echo ""
+
+          # Test 8: Get a specific resource
+          echo "=== Test 8: Get Specific Resources ==="
+          if kubectl get configmap {{ include "bank-app.fullname" . }}-auth-server -n {{ .Values.global.namespace }} > /dev/null 2>&1; then
+            echo "✓ Successfully retrieved specific ConfigMap"
+          else
+            echo "✗ ERROR: Failed to get specific ConfigMap"
+            exit 1
+          fi
+          echo ""
+
+          echo "=== All RBAC tests passed! ==="
+          echo "ServiceAccount has correct read-only permissions for required resources"

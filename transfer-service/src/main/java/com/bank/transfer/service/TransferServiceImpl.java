@@ -8,7 +8,9 @@ import com.bank.common.dto.contracts.exchange.ConversionRequest;
 import com.bank.common.dto.contracts.notifications.NotificationRequest;
 import com.bank.common.dto.contracts.transfer.TransferRequest;
 import com.bank.common.dto.contracts.transfer.TransferResponse;
+import com.bank.common.metrics.CustomMetricsService;
 import com.bank.transfer.client.*;
+import com.bank.transfer.kafka.NotificationProducer;
 import com.bank.transfer.entity.Transfer;
 import com.bank.transfer.repository.TransferRepository;
 import com.bank.common.exception.BusinessException;
@@ -34,24 +36,32 @@ public class TransferServiceImpl implements TransferService {
     private final AccountsClient accountsClient;
     private final ExchangeClient exchangeClient;
     private final BlockerClient blockerClient;
-    private final NotificationClient notificationClient;
+    private final NotificationProducer notificationProducer;
+    private final CustomMetricsService metricsService;
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public TransferServiceImpl(TransferRepository transferRepository,
         AccountsClient accountsClient,
         ExchangeClient exchangeClient,
         BlockerClient blockerClient,
-        NotificationClient notificationClient) {
+        NotificationProducer notificationProducer,
+        CustomMetricsService metricsService) {
         this.transferRepository = transferRepository;
         this.accountsClient = accountsClient;
         this.exchangeClient = exchangeClient;
         this.blockerClient = blockerClient;
-        this.notificationClient = notificationClient;
+        this.notificationProducer = notificationProducer;
+        this.metricsService = metricsService;
     }
 
     @Override
     public TransferResponse processTransfer(TransferRequest request, String username) {
         try {
+            // FIX: Defensive null check for username
+            if (username == null || username.isBlank()) {
+                throw new BusinessException("User authentication is required");
+            }
+
             // Validate that either toBankAccountId or recipientEmail is provided
             if (request.getToBankAccountId() == null &&
                 (request.getRecipientEmail() == null || request.getRecipientEmail().isBlank())) {
@@ -75,6 +85,10 @@ public class TransferServiceImpl implements TransferService {
 
             // Check balance
             if (fromBalance.compareTo(request.getAmount()) < 0) {
+                metricsService.recordFailedTransfer(
+                    request.getFromBankAccountId().toString(),
+                    request.getToBankAccountId() != null ? request.getToBankAccountId().toString() : "email",
+                    "insufficient_funds");
                 throw new BusinessException("Insufficient balance");
             }
 
@@ -148,7 +162,7 @@ public class TransferServiceImpl implements TransferService {
                         .build();
                     transferRepository.save(transfer);
 
-                    notificationClient.sendNotification(NotificationRequest.builder()
+                    notificationProducer.sendNotification(NotificationRequest.builder()
                         .username(username)
                         .message("The operation looks suspicious and is blocked by bank")
                         .type("WARNING")
@@ -175,6 +189,10 @@ public class TransferServiceImpl implements TransferService {
                     log.info("Currency converted: {} {} -> {} {}", request.getAmount(), fromCurrency,
                         convertedAmount, toCurrency);
                 } else {
+                    metricsService.recordFailedTransfer(
+                        request.getFromBankAccountId().toString(),
+                        request.getToBankAccountId().toString(),
+                        "conversion_failed");
                     throw new BusinessException("Currency conversion failed: " + resp.getMessage());
                 }
             } else {
@@ -212,15 +230,15 @@ public class TransferServiceImpl implements TransferService {
                 .build();
             transfer = transferRepository.save(transfer);
 
-            // Send notifications
-            notificationClient.sendNotification(NotificationRequest.builder()
+            // Send notifications via Kafka
+            notificationProducer.sendNotification(NotificationRequest.builder()
                 .username(username)
                 .message("Transfer of " + request.getAmount() + " " + fromCurrency + " sent")
                 .type("INFO")
                 .build());
 
             if (!username.equals(toUsername)) {
-                notificationClient.sendNotification(NotificationRequest.builder()
+                notificationProducer.sendNotification(NotificationRequest.builder()
                     .username(toUsername)
                     .message("Transfer of " + convertedAmount + " " + toCurrency + " received")
                     .type("INFO")
@@ -234,11 +252,19 @@ public class TransferServiceImpl implements TransferService {
                 .convertedAmount(convertedAmount)
                 .build();
         } catch (FeignException ex) {
+            metricsService.recordFailedTransfer(
+                request.getFromBankAccountId().toString(),
+                request.getToBankAccountId() != null ? request.getToBankAccountId().toString() : "unknown",
+                "service_error");
             throw new BusinessException(resolveFeignMessage("Accounts service error", ex));
         } catch (BusinessException ex) {
             throw ex;
         } catch (Exception ex) {
             log.error("Unexpected transfer failure", ex);
+            metricsService.recordFailedTransfer(
+                request.getFromBankAccountId().toString(),
+                request.getToBankAccountId() != null ? request.getToBankAccountId().toString() : "unknown",
+                "unexpected_error");
             throw new BusinessException("Transfer failed: " + ex.getMessage());
         }
     }

@@ -13,7 +13,7 @@ public class ExchangeRateScheduler {
         this.rateGeneratorService = rateGeneratorService;
     }
 
-    @Scheduled(fixedRate = 1000) // Every second
+    @Scheduled(cron = "${generator.schedule:* * * * * *}") // Every second
     public void generateRates() {
         rateGeneratorService.generateAndUpdateRates();
     }

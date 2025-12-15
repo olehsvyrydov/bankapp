@@ -13,10 +13,10 @@ service:
 
 resources:
   limits:
-    memory: 512Mi
+    memory: 768Mi
     cpu: 500m
   requests:
-    memory: 256Mi
+    memory: 384Mi
     cpu: 250m
 
 # Database configuration (from global/parent)
@@ -46,21 +46,21 @@ oauth2:
 # Liveness and readiness probe configuration
 livenessProbe:
   enabled: true
-  initialDelaySeconds: 90
+  initialDelaySeconds: 120
   periodSeconds: 10
   timeoutSeconds: 5
-  failureThreshold: 6
+  failureThreshold: 10
 
 readinessProbe:
   enabled: true
-  initialDelaySeconds: 60
+  initialDelaySeconds: 90
   periodSeconds: 10
   timeoutSeconds: 3
-  failureThreshold: 3
+  failureThreshold: 5
 
 startupProbe:
   enabled: true
   initialDelaySeconds: 0
   periodSeconds: 10
   timeoutSeconds: 5
-  failureThreshold: 30
+  failureThreshold: 50
